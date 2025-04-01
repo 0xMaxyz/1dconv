@@ -17,6 +17,10 @@ export interface TestInputs {
 export interface OrchestrationConfig {
   calldataLibPath: string;
   outputDir: string;
+  runTests?: boolean;
+  port?: number;
+  testCount?: number;
+  verbose?: boolean;
 }
 
 export interface EnumValue {
@@ -27,10 +31,12 @@ export interface EnumValue {
 export interface EnumDef {
   name: string;
   values: EnumValue[];
+  library?: string;
 }
 
 export interface ConstantDef {
   type: string;
   name: string;
   value: string;
+  library?: string;
 }
