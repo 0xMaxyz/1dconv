@@ -6,9 +6,7 @@
       "request": "launch",
       "name": "Debug Bun",
       "program": "${workspaceFolder}/src/cli.ts",
-      "args": [
-        "../on_1delta_repo/contracts-delegation/test/light/utils/CalldataLib.sol"
-      ],
+      "args": ["${workspaceFolder}/data/input/CalldataLib.sol"],
       "cwd": "${workspaceFolder}",
       "env": {},
       "strictEnv": false,
