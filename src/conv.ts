@@ -115,26 +115,49 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
   // Process function body
   let tsBody = funcDef.body;
 
-  // Handle abi.encodePacked if present
-  if (tsBody.includes("abi.encodePacked")) {
-    const encodedArgsMatch = tsBody.match(/abi\.encodePacked\((.*)\)/);
-
-    if (encodedArgsMatch && encodedArgsMatch[1]) {
-      // Split arguments more carefully to handle ternary operators
-      const encodedArgs = splitPreservingTernary(encodedArgsMatch[1]);
+  // Process each abi.encodePacked call
+  if (funcDef.body.includes("abi.encodePacked")) {
+    // Look for all parameters inside abi.encodePacked
+    const encodedParams = funcDef.body.match(/abi\.encodePacked\((.*)\)/)?.[1];
+    if (encodedParams) {
+      // Split by commas and handle nested function calls correctly ()
+      const args = splitArgsRespectingParentheses(encodedParams);
 
       const types: string[] = [];
       const valueExpressions: string[] = [];
 
-      encodedArgs.forEach((arg) => {
+      args.forEach((arg) => {
         arg = arg.trim();
 
-        // Handle ternary operators
+        // Skip comments
+        if (arg.startsWith("//")) return;
+
+        // Handle ternary operators (e.g., isBase ? uint8(1) : uint8(0))
         if (arg.includes("?")) {
-          // For ternary, we know the type from the cast in both branches
+          // Extract type from ternary expression (usually uint8)
           const castType = arg.match(/uint\d+/)?.[0] || "uint8";
           types.push(castType);
           valueExpressions.push(arg); // Keep the ternary as is
+          return;
+        }
+
+        // hardcoded handler for functions that return uint128
+        // TODO: remove this once we have a proper way to handle this
+        const specialFunctionMatch = arg.match(
+          /(generateAmountBitmap|setOverrideAmount)\((.*)\)/
+        );
+        if (specialFunctionMatch) {
+          // These functions return uint128
+          types.push("uint128");
+          valueExpressions.push(arg);
+          return;
+        }
+
+        // Handle enum types
+        const enumMatch = arg.match(/(\w+)\.(\w+)\.(\w+)/); // Like CalldataLib.SweepType.VALIDATE
+        if (enumMatch || arg.match(/sweepType/)) {
+          types.push("uint8"); // Enums are uint8 in Solidity
+          valueExpressions.push(arg);
           return;
         }
 
@@ -148,8 +171,16 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
         } else {
           // For regular variables
           const argName = arg.trim();
-          const paramType =
-            funcDef.params.find((p) => p.name === argName)?.type || "bytes";
+          // Find parameter type from function definition
+          const param = funcDef.params.find((p) => p.name === argName);
+          let paramType = param?.type || "bytes";
+
+          // Clean up type by removing "memory" and other modifiers
+          paramType = paramType
+            .replace(" memory", "")
+            .replace(" calldata", "")
+            .trim();
+
           types.push(paramType);
           valueExpressions.push(argName);
         }
@@ -169,36 +200,30 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
   return `${tsBody.replace(/;$/, ";")}`;
 }
 
-// Helper function to split arguments while preserving ternary operators
-function splitPreservingTernary(str: string): string[] {
+function splitArgsRespectingParentheses(argsStr: string): string[] {
   const result: string[] = [];
   let current = "";
   let depth = 0;
-  let inTernary = false;
 
-  for (let i = 0; i < str.length; i++) {
-    const char = str[i];
+  for (let i = 0; i < argsStr.length; i++) {
+    const char = argsStr[i];
 
-    if (char === "(") depth++;
-    else if (char === ")") depth--;
-    else if (char === "?") inTernary = true;
-    else if (char === ":" && inTernary) {
-      // Keep processing the ternary
+    if (char === "(" || char === "{" || char === "[") {
+      depth++;
       current += char;
-      continue;
-    }
-
-    if (char === "," && depth === 0 && !inTernary) {
-      result.push(current.trim());
+    } else if (char === ")" || char === "}" || char === "]") {
+      depth--;
+      current += char;
+    } else if (char === "," && depth === 0) {
+      result.push(current);
       current = "";
-      inTernary = false;
     } else {
       current += char;
     }
   }
 
   if (current) {
-    result.push(current.trim());
+    result.push(current);
   }
 
   return result;
@@ -250,7 +275,7 @@ export function convertToTS(
 
   output += `
   import { type Hex, type Address, encodePacked } from "viem";
-  import { uint128, uint8, uint112, uint16, shiftLeft, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount } from "../../src/utils.ts";
+  import { uint128, uint8, uint112, uint16, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount } from "../../src/utils.ts";
   `;
 
   // Add enum definitions
