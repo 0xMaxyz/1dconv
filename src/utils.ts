@@ -1,5 +1,9 @@
 import { concat, type Hex, encodePacked as abiEncodePacked } from "viem";
 
+export const _PRE_PARAM = 1n << 127n;
+export const _SHARES_MASK = 1n << 126n;
+export const _UNSAFE_AMOUNT = 1n << 125n;
+
 export function shiftLeft(value: bigint | number, bits: number): bigint {
   return BigInt(value) << BigInt(bits);
 }
@@ -42,4 +46,42 @@ export function encodePacked(types: string[], values: any[]): Hex {
   }
 
   return abiEncodePacked(types, values);
+}
+
+export function generateAmountBitmap(
+  amount: bigint,
+  preParam: boolean,
+  useShares: boolean,
+  unsafe: boolean
+): bigint {
+  let am = amount;
+  if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | _PRE_PARAM);
+  if (useShares) am = uint128((am & ~BigInt(_SHARES_MASK)) | _SHARES_MASK);
+  if (unsafe) am = uint128((am & ~BigInt(_UNSAFE_AMOUNT)) | _UNSAFE_AMOUNT);
+  return am;
+}
+
+export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
+  let am = uint128(amount);
+  if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | shiftLeft(1n, 127));
+  return am;
+}
+
+/**
+ * Parse the Forge output to extract the bytes results
+ * @param output - The output from the Forge script
+ * @returns Array of extracted bytes results
+ */
+export function parseForgeOutput(output: string): string[] {
+  const outputs: string[] = [];
+  const lines = output.split("\n");
+  for (const line of lines) {
+    if (line?.includes("bytes")) {
+      const parts = line.split(":");
+      if (parts.length > 1) {
+        outputs.push(parts[1]!.trim());
+      }
+    }
+  }
+  return outputs;
 }
