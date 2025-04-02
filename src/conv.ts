@@ -1,261 +1,312 @@
-// solidity-to-ts-converter.ts
+import { parseSolidity } from "./parser";
+import type { SolidityStruct, FunctionDef } from "./types";
 import * as fs from "fs";
 import * as path from "path";
-import { Parameter, FunctionDef, EnumDef, ConstantDef } from "./types";
 
-function convertCalldataLibToTS(filePath: string): string {
-  // Read the Solidity file
-  const content = fs.readFileSync(filePath, "utf8");
+const TYPE_MAP: Record<string, string> = {
+  uint8: "number",
+  uint16: "number",
+  uint32: "number",
+  uint64: "bigint",
+  uint128: "bigint",
+  uint256: "bigint",
+  int8: "number",
+  int16: "number",
+  int32: "number",
+  int64: "bigint",
+  int128: "bigint",
+  int256: "bigint",
+  bool: "boolean",
+  string: "string",
+  bytes: "Hex",
+  address: "Address",
+  bytes1: "Hex",
+  bytes2: "Hex",
+  bytes3: "Hex",
+  bytes4: "Hex",
+  bytes5: "Hex",
+  bytes6: "Hex",
+  bytes7: "Hex",
+  bytes8: "Hex",
+  bytes9: "Hex",
+  bytes10: "Hex",
+  bytes11: "Hex",
+  bytes12: "Hex",
+  bytes13: "Hex",
+  bytes14: "Hex",
+  bytes15: "Hex",
+  bytes16: "Hex",
+  bytes17: "Hex",
+  bytes18: "Hex",
+  bytes19: "Hex",
+  bytes20: "Hex",
+  bytes21: "Hex",
+  bytes22: "Hex",
+  bytes23: "Hex",
+  bytes24: "Hex",
+  bytes25: "Hex",
+  bytes26: "Hex",
+  bytes27: "Hex",
+  bytes28: "Hex",
+  bytes29: "Hex",
+  bytes30: "Hex",
+  bytes31: "Hex",
+  bytes32: "Hex",
+};
 
-  // Extract library name
-  const libraryMatch = content.match(/library\s+(\w+)/);
-  const libraryName = libraryMatch ? libraryMatch[1] : "CalldataLib";
-
-  // Parse enums
-  const enumMatches = [...content.matchAll(/enum\s+(\w+)\s*\{([^}]+)\}/g)];
-  const enums = enumMatches.map((match) => {
-    const enumName = match[1];
-    const enumValues = match[2]
-      .split(",")
-      .map((val) => val.trim())
-      .filter((val) => val)
-      .map((val) => {
-        const [name, value] = val.split("=").map((x) => x.trim());
-        return { name, value };
-      });
-
-    return { name: enumName, values: enumValues };
-  });
-
-  // Parse constants
-  const constantMatches = [
-    ...content.matchAll(
-      /(\w+)\s+(?:internal|private)\s+constant\s+(\w+)\s*=\s*([^;]+);/g
-    ),
-  ];
-  const constants = constantMatches.map((match) => {
-    return {
-      type: match[1],
-      name: match[2],
-      value: match[3].trim(),
-    };
-  });
-
-  // Parse functions
-  const functionMatches = [
-    ...content.matchAll(
-      /function\s+(\w+)\s*\(([^)]*)\)\s*internal\s+pure\s+returns\s*\(([^)]*)\)\s*\{([^}]+)\}/g
-    ),
-  ];
-
-  const functions = functionMatches.map((match) => {
-    const functionName = match[1];
-    const params: Parameter[] = match[2]
-      .split(",")
-      .map((param) => param.trim())
-      .filter((param) => param)
-      .map((param) => {
-        const parts = param.split(" ").filter((p) => p);
-        const type = parts.slice(0, -1).join(" ");
-        const name = parts[parts.length - 1];
-        return { type, name };
-      });
-
-    const returnType = match[3].trim();
-    const body = match[4];
-
-    return {
-      name: functionName,
-      params,
-      returnType,
-      body,
-    };
-  });
-
-  // Generate TypeScript code
-  let tsCode = `// Generated from ${path.basename(filePath)}\n`;
-  tsCode += `import { encodePacked, Hex, Address } from 'viem';\n\n`;
-
-  // Add enums
-  for (const enumDef of enums) {
-    tsCode += `export enum ${enumDef.name} {\n`;
-    enumDef.values.forEach((val, index) => {
-      if (val.value) {
-        tsCode += `  ${val.name} = ${val.value}${
-          index < enumDef.values.length - 1 ? "," : ""
-        }\n`;
-      } else {
-        tsCode += `  ${val.name} = ${index}${
-          index < enumDef.values.length - 1 ? "," : ""
-        }\n`;
-      }
-    });
-    tsCode += `}\n\n`;
+function convertType(
+  solidityType: string,
+  structs: SolidityStruct[] = []
+): string {
+  // Handle array types
+  if (solidityType.endsWith("[]")) {
+    const baseType = solidityType.slice(0, -2);
+    return `${convertType(baseType, structs)}[]`;
   }
 
-  // Add constants
-  for (const constant of constants) {
-    // Convert Solidity types to TypeScript types
-    let tsType = "number";
-    let value = constant.value;
+  // Handle fixed-size arrays
+  const fixedArrayMatch = solidityType.match(/\[(\d+)\]$/);
+  if (fixedArrayMatch) {
+    const baseType = solidityType.slice(0, -fixedArrayMatch[0].length);
+    return `${convertType(baseType, structs)}[]`;
+  }
 
-    if (constant.type.includes("uint")) {
-      tsType = "bigint";
-      // Check if it's a bit shift operation
-      if (value.includes("<<")) {
-        const [base, shift] = value.split("<<").map((v) => v.trim());
-        value = `${base}n << ${shift}n`;
-      } else if (!value.includes("n")) {
-        value = `${value}n`;
-      }
+  // Handle mapping types
+  if (solidityType.startsWith("mapping(")) {
+    const [keyType, valueType] = solidityType
+      .slice(8, -1)
+      .split("=>")
+      .map((t) => t.trim());
+    if (!keyType || !valueType) {
+      throw new Error(`Invalid mapping type: ${solidityType}`);
     }
-
-    tsCode += `export const ${constant.name}: ${tsType} = ${value};\n`;
-  }
-  tsCode += "\n";
-
-  // Helper functions for encoding
-  tsCode += `// Helper functions for bit manipulation\n`;
-  tsCode += `function generateAmountBitmap(amount: bigint, preParam: boolean, useShares: boolean, unsafe: boolean = false): bigint {\n`;
-  tsCode += `  let am = amount;\n`;
-  tsCode += `  if (preParam) am = (am & ~_PRE_PARAM) | _PRE_PARAM;\n`;
-  tsCode += `  if (useShares) am = (am & ~_SHARES_MASK) | _SHARES_MASK;\n`;
-  tsCode += `  if (unsafe) am = (am & ~_UNSAFE_AMOUNT) | _UNSAFE_AMOUNT;\n`;
-  tsCode += `  return am;\n`;
-  tsCode += `}\n\n`;
-
-  tsCode += `function setOverrideAmount(amount: bigint, preParam: boolean): bigint {\n`;
-  tsCode += `  let am = amount;\n`;
-  tsCode += `  if (preParam) am = (am & ~_PRE_PARAM) | _PRE_PARAM;\n`;
-  tsCode += `  return am;\n`;
-  tsCode += `}\n\n`;
-
-  // Add function implementations
-  for (const func of functions) {
-    // Convert parameter types from Solidity to TypeScript
-    const tsParams = func.params
-      .map((param) => {
-        let tsType = "unknown";
-
-        if (param.type === "address") tsType = "Address";
-        else if (param.type === "uint256" || param.type.includes("uint"))
-          tsType = "bigint";
-        else if (param.type === "bool") tsType = "boolean";
-        else if (param.type === "bytes" || param.type === "bytes memory")
-          tsType = "Hex";
-        else if (param.type === "string" || param.type === "string memory")
-          tsType = "string";
-
-        return `${param.name}: ${tsType}`;
-      })
-      .join(", ");
-
-    // Convert return type
-    let tsReturnType = "any";
-    if (func.returnType === "bytes memory") tsReturnType = "Hex";
-
-    // Generate function header
-    tsCode += `export function ${func.name}(${tsParams}): ${tsReturnType} {\n`;
-
-    // Analyze function body to determine if it uses abi.encodePacked
-    if (func.body.includes("abi.encodePacked")) {
-      // Extract the parameters from abi.encodePacked
-      const encodeMatch = func.body.match(/abi\.encodePacked\s*\(([^)]+)\)/);
-
-      if (encodeMatch) {
-        const encodeParams = encodeMatch[1]
-          .split(",")
-          .map((p) => p.trim())
-          .filter((p) => p);
-
-        // Convert parameter types to viem-compatible format
-        const viemTypes = func.params.map((param) => {
-          // Clean the type by removing memory keyword and any comments or newlines
-          const type = param.type
-            .replace(" memory", "")
-            .replace(/\/\/.*$/gm, "") // Remove comments
-            .replace(/\n/g, "") // Remove newlines
-            .trim(); // Remove extra whitespace
-
-          if (type.includes("uint")) return `'${type}'`;
-          if (type === "address") return "'address'";
-          if (type.includes("bytes")) return `'${type}'`;
-          if (type === "bool") return "'bool'";
-          return `'${type}'`; // fallback
-        });
-
-        const paramNames = func.params.map((p) => p.name);
-
-        tsCode += `  return encodePacked(\n`;
-        tsCode += `    [${viemTypes.join(", ")}],\n`;
-        tsCode += `    [${paramNames.join(", ")}]\n`;
-        tsCode += `  );\n`;
-      } else {
-        // If we couldn't properly parse, use a simplified approach
-        // Convert parameter types to viem-compatible format
-        const viemTypes = func.params.map((param) => {
-          // Clean the type by removing memory keyword and any comments or newlines
-          const type = param.type
-            .replace(" memory", "")
-            .replace(/\/\/.*$/gm, "") // Remove comments
-            .replace(/\n/g, "") // Remove newlines
-            .trim(); // Remove extra whitespace
-
-          if (type.includes("uint")) return `'${type}'`;
-          if (type === "address") return "'address'";
-          if (type.includes("bytes")) return `'${type}'`;
-          if (type === "bool") return "'bool'";
-          return `'${type}'`; // fallback
-        });
-
-        const paramNames = func.params.map((p) => p.name);
-
-        tsCode += `  return encodePacked(\n`;
-        tsCode += `    [${viemTypes.join(", ")}],\n`;
-        tsCode += `    [${paramNames.join(", ")}]\n`;
-        tsCode += `  );\n`;
-      }
-    } else {
-      // If the function body doesn't use abi.encodePacked, use a simplified approach
-      // Convert parameter types to viem-compatible format
-      const viemTypes = func.params.map((param) => {
-        // Clean the type by removing memory keyword and any comments or newlines
-        const type = param.type
-          .replace(" memory", "")
-          .replace(/\/\/.*$/gm, "") // Remove comments
-          .replace(/\n/g, "") // Remove newlines
-          .trim(); // Remove extra whitespace
-
-        if (type.includes("uint")) return `'${type}'`;
-        if (type === "address") return "'address'";
-        if (type.includes("bytes")) return `'${type}'`;
-        if (type === "bool") return "'bool'";
-        return `'${type}'`; // fallback
-      });
-
-      const paramNames = func.params.map((p) => p.name);
-
-      tsCode += `  return encodePacked(\n`;
-      tsCode += `    [${viemTypes.join(", ")}],\n`;
-      tsCode += `    [${paramNames.join(", ")}]\n`;
-      tsCode += `  );\n`;
-    }
-
-    tsCode += `}\n\n`;
+    return `Record<${convertType(keyType, structs)}, ${convertType(
+      valueType,
+      structs
+    )}>`;
   }
 
-  return tsCode;
+  // Handle struct types
+  const struct = structs.find((s) => s.name === solidityType);
+  if (struct) {
+    return `{
+      ${struct.fields
+        .map((field) => `${field.name}: ${convertType(field.type, structs)}`)
+        .join(";\n      ")}
+    }`;
+  }
+
+  // Handle basic types
+  return TYPE_MAP[solidityType] || "any";
 }
 
-// Add at the end of the file:
-// Usage
-const inputFile = process.argv[2] || "./CalldataLib.sol";
-const outputFile = process.argv[3] || "./ts-calldata-lib.ts";
+function convertAbiEncodePacked(funcDef: FunctionDef): string {
+  // Convert parameters with their types
+  const tsParams = funcDef.params
+    .map((param) => {
+      const tsType = TYPE_MAP[param.type] || "any"; // Fallback to 'any' if type not found
+      return `${param.name}: ${tsType}`;
+    })
+    .join(", ");
 
-try {
-  const tsCode = convertCalldataLibToTS(inputFile);
-  fs.writeFileSync(outputFile, tsCode);
-  console.log(`Generated TypeScript code saved to ${outputFile}`);
-} catch (error) {
-  console.error("Error:", error);
+  // Convert return type
+  const tsReturnType = TYPE_MAP[funcDef.returnType] || "any";
+
+  // Process function body
+  let tsBody = funcDef.body;
+
+  // Handle abi.encodePacked if present
+  if (tsBody.includes("abi.encodePacked")) {
+    const encodedArgsMatch = tsBody.match(/abi\.encodePacked\((.*)\)/);
+
+    if (encodedArgsMatch && encodedArgsMatch[1]) {
+      // Split arguments more carefully to handle ternary operators
+      const encodedArgs = splitPreservingTernary(encodedArgsMatch[1]);
+
+      const types: string[] = [];
+      const valueExpressions: string[] = [];
+
+      encodedArgs.forEach((arg) => {
+        arg = arg.trim();
+
+        // Handle ternary operators
+        if (arg.includes("?")) {
+          // For ternary, we know the type from the cast in both branches
+          const castType = arg.match(/uint\d+/)?.[0] || "uint8";
+          types.push(castType);
+          valueExpressions.push(arg); // Keep the ternary as is
+          return;
+        }
+
+        // Handle regular type casting
+        const castMatch = arg.match(/(\w+)\((.*)\)/);
+        if (castMatch) {
+          const castType = castMatch[1];
+          const castValue = castMatch[2];
+          types.push(castType);
+          valueExpressions.push(`${castType}(${castValue})`);
+        } else {
+          // For regular variables
+          const argName = arg.trim();
+          const paramType =
+            funcDef.params.find((p) => p.name === argName)?.type || "bytes";
+          types.push(paramType);
+          valueExpressions.push(argName);
+        }
+      });
+
+      // Replace abi.encodePacked with our utility
+      tsBody = tsBody.replace(
+        /abi\.encodePacked\((.*)\)/,
+        ` encodePacked(['${types.join("', '")}'], [${valueExpressions.join(
+          ", "
+        )}])`
+      );
+    }
+  }
+
+  // Reassemble the function
+  return `${tsBody.replace(/;$/, ";")}`;
+}
+
+// Helper function to split arguments while preserving ternary operators
+function splitPreservingTernary(str: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let depth = 0;
+  let inTernary = false;
+
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+
+    if (char === "(") depth++;
+    else if (char === ")") depth--;
+    else if (char === "?") inTernary = true;
+    else if (char === ":" && inTernary) {
+      // Keep processing the ternary
+      current += char;
+      continue;
+    }
+
+    if (char === "," && depth === 0 && !inTernary) {
+      result.push(current.trim());
+      current = "";
+      inTernary = false;
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) {
+    result.push(current.trim());
+  }
+
+  return result;
+}
+
+function convertLib2Enum(libCode: string): string {
+  // Regular expression to match library definitions
+  const libraryRegex = /library\s+(\w+)\s*{([^}]*)}/g;
+  // Regular expression to match constant declarations
+  const constantRegex =
+    /\w+\s+(?:internal\s+)?(?:constant\s+)?(\w+)\s*=\s*([^;]+);/g;
+
+  let result = libCode;
+
+  // Replace each library with enum
+  result = result.replace(
+    libraryRegex,
+    (match, libraryName, libraryContent) => {
+      // Extract all constants
+      const constants: string[] = [];
+      let constantMatch;
+
+      while ((constantMatch = constantRegex.exec(libraryContent)) !== null) {
+        const [_, name, value] = constantMatch;
+        constants.push(`  ${name} = ${value}`);
+      }
+
+      // Create enum
+      return `export enum ${libraryName} {\n${constants.join(",\n")}\n}\n\n`;
+    }
+  );
+
+  return result;
+}
+
+/**
+ * Converts Solidity code to TypeScript code
+ * @param filePath - The path to the Solidity file to convert
+ * @returns The TypeScript code
+ */
+export function convertToTS(filePath: string, debug: boolean = false): string {
+  const solidityCode = fs.readFileSync(filePath, "utf8");
+
+  const { functions, enums, constants, structs, imports, libraries } =
+    parseSolidity(solidityCode);
+
+  let output = "";
+
+  // Add imports
+  imports.forEach((importPath) => {
+    const name = path.basename(importPath, ".sol") + ".ts";
+    output += `import "./${name}";\n`; // the imports are generated in the same dir, so we can import them at ./filename
+  });
+
+  output += `
+  import { type Hex, type Address, encodePacked } from "viem";
+  import { uint128, uint8, uint112, uint16, shiftLeft, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount } from "../../src/utils.ts";
+  `;
+
+  // Add enum definitions
+  enums.forEach((enumDef) => {
+    output += `export enum ${enumDef.name} {\n`;
+    enumDef.values.forEach((value) => {
+      output += `  ${value.name} = "${value.name}",\n`;
+    });
+    output += "}\n\n";
+  });
+
+  // Add libraries as ts enums
+  libraries.forEach((lib) => {
+    output += convertLib2Enum(lib);
+  });
+
+  // Add struct definitions
+  structs.forEach((struct) => {
+    output += `export interface ${struct.name} {\n`;
+    struct.fields.forEach((field) => {
+      output += `  ${field.name}: ${convertType(field.type, structs)};\n`;
+    });
+    output += "}\n\n";
+  });
+
+  // Add constant definitions
+  // constants.forEach((constant) => {
+  //   output += `export const ${constant.name} = ${constant.value};\n`;
+  // });
+
+  const hardcodedFunctions = ["generateAmountBitmap", "setOverrideAmount"];
+  // Convert functions
+  functions
+    .filter((func) => !hardcodedFunctions.includes(func.name))
+    .forEach((func) => {
+      // Function signature
+      output += `export function ${func.name}(`;
+      output += func.params
+        .map((param) => `${param.name}: ${convertType(param.type, structs)}`)
+        .join(", ");
+      output += `): ${convertType(func.returnType || "void", structs)} {\n`;
+
+      let body = func.body;
+      if (body.includes("abi.encodePacked")) {
+        // then convert this
+        body = convertAbiEncodePacked(func);
+      }
+
+      output += body;
+      output += "}\n\n";
+    });
+
+  return output;
 }
