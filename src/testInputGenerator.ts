@@ -18,6 +18,7 @@ export function generateTestInputs(func: FunctionDef): TestInputs {
   });
 
   return {
+    functionName: func.name,
     solidityValues: solidity,
     typescriptValues: typescript,
   };
@@ -157,7 +158,7 @@ interface FunctionInfo {
 }
 
 // Generate test with appropriate expectations
-function generateTest(func: FunctionInfo): string {
+function generateTest(func: FunctionInfo, expectedOutput: string): string {
   // Generate parameters based on their types
   const params = func.params.map((param) => {
     // Normalize the type by removing comments
@@ -168,22 +169,21 @@ function generateTest(func: FunctionInfo): string {
 
   return `
   test('${func.name} should match Solidity output', () => {
-    try {
+    
       const result = CalldataLib.${func.name}(
         ${params.join(",\n        ")}
       );
       expect(result).toBeDefined();
       expect(typeof result).toBe('string');
       expect(result.startsWith('0x')).toBe(true);
-    } catch (e) {
-      console.log("Error in ${func.name} test:", e);
-      // Allow test to pass even if there's an error
-      expect(true).toBe(true);
-    }
+      expect(result).toBe("${expectedOutput}");
   });`;
 }
 
-export function generateTestSuite(functions: FunctionInfo[]): string {
+export function generateTestSuite(
+  functions: FunctionInfo[],
+  expectedOutputs: string[]
+): string {
   const imports = `
 import { describe, expect, test } from 'bun:test';
 import * as CalldataLib from "./tsCall";
@@ -191,12 +191,9 @@ import { SweepType } from './tsCall';
 import type { Address, Hex } from 'viem';
 `;
 
-  // Filter out utility functions that are imported from utils.ts
-  const filteredFunctions = functions.filter(
-    (func) => !["generateAmountBitmap", "setOverrideAmount"].includes(func.name)
-  );
-
-  const tests = filteredFunctions.map((func) => generateTest(func)).join("\n");
+  const tests = functions
+    .map((func, index) => generateTest(func, expectedOutputs[index]!))
+    .join("\n");
 
   return `${imports}
 
