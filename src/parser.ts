@@ -199,45 +199,51 @@ export function parseSolidity(
   };
 }
 
-/**
- * Recursively processes all imports and generates TypeScript files
- * @param filePath - The path to the Solidity file
- * @param outputDir - The directory where TypeScript files will be generated
- * @param processedFiles - Set of already processed files to avoid circular imports
- */
+function combineContent(
+  filePath: string,
+  processedFiles: Set<string> = new Set(),
+  debug: boolean = false
+): string {
+  if (processedFiles.has(filePath)) {
+    return ""; // Skip if already processed to avoid circular imports
+  }
+  processedFiles.add(filePath);
+
+  // Read the current file content
+  let content = fs.readFileSync(filePath, "utf8");
+  const imports = parseImports(content);
+
+  // Process all imports recursively
+  if (imports) {
+    for (const importPath of imports) {
+      const resolvedPath = path.resolve(path.dirname(filePath), importPath);
+      // Recursively get the content of this import and its imports
+      const importedContent = combineContent(
+        resolvedPath,
+        processedFiles,
+        debug
+      );
+      // Append the imported content
+      content += "\n" + importedContent;
+    }
+  }
+
+  // Remove import statements from this content
+  return content.replace(/import\s+["'](.+?)["'];/g, "");
+}
+
 export function processImports(
   filePath: string,
   outputDir: string,
-  debug: boolean = false,
-  processedFiles: Set<string> = new Set()
+  debug: boolean = false
 ): void {
-  if (processedFiles.has(filePath)) {
-    return; // Skip if already processed to avoid circular imports
-  }
-  // adds to list of processed files to prevent loops
-  processedFiles.add(filePath);
-  // get the imports of the current fileP
-  const content = fs.readFileSync(filePath, "utf8");
-  const imports = parseImports(content);
-  // the first element of the matches is the input string
-  if (imports) {
-    for (const importPath of imports) {
-      // Resolve relative path
-      const resolvedPath = path.resolve(path.dirname(filePath), importPath);
-      // call processImports recursively and pass the processedFiles set to prevent loops
-      processImports(resolvedPath, outputDir, debug, processedFiles);
+  // Combine to one file
+  const combinedContent = combineContent(filePath, new Set(), debug);
 
-      // Convert the imported file to TypeScript
-      const tsCode = convertToTS(resolvedPath);
+  // Convert the combined content to TypeScript
+  const tsCode = convertToTS(combinedContent);
 
-      // Save TypeScript file
-      const outputFileName = path.basename(importPath, ".sol") + ".ts";
-      const outputPath = path.join(outputDir, outputFileName);
-      fs.writeFileSync(outputPath, tsCode);
-    }
-  }
-  // convert the current file to TS
-  const tsCode = convertToTS(filePath);
+  // Save the combined TypeScript file
   const outputFileName = path.basename(filePath, ".sol") + ".ts";
   const outputPath = path.join(outputDir, outputFileName);
   fs.writeFileSync(outputPath, tsCode);

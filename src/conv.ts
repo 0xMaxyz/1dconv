@@ -236,22 +236,17 @@ function convertLib2Enum(libCode: string): string {
 
 /**
  * Converts Solidity code to TypeScript code
- * @param filePath - The path to the Solidity file to convert
+ * @param solidityCode - The Solidity code to convert
  * @returns The TypeScript code
  */
-export function convertToTS(filePath: string, debug: boolean = false): string {
-  const solidityCode = fs.readFileSync(filePath, "utf8");
-
+export function convertToTS(
+  solidityCode: string,
+  debug: boolean = false
+): string {
   const { functions, enums, constants, structs, imports, libraries } =
     parseSolidity(solidityCode);
 
   let output = "";
-
-  // Add imports
-  imports.forEach((importPath) => {
-    const name = path.basename(importPath, ".sol") + ".ts";
-    output += `import "./${name}";\n`; // the imports are generated in the same dir, so we can import them at ./filename
-  });
 
   output += `
   import { type Hex, type Address, encodePacked } from "viem";
@@ -267,8 +262,8 @@ export function convertToTS(filePath: string, debug: boolean = false): string {
     output += "}\n\n";
   });
 
-  // Add libraries as ts enums
-  libraries.forEach((lib) => {
+  // Add libraries as ts enums, remove the first one as it's the main library
+  libraries.slice(1).forEach((lib) => {
     output += convertLib2Enum(lib);
   });
 
