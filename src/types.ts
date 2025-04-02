@@ -7,6 +7,7 @@ export interface FunctionDef {
   name: string;
   params: Parameter[];
   returnType: string;
+  body: string;
 }
 
 export interface TestInputs {
@@ -39,4 +40,43 @@ export interface ConstantDef {
   name: string;
   value: string;
   library?: string;
+}
+
+export interface StructField {
+  type: string;
+  name: string;
+}
+
+export interface StructDef {
+  name: string;
+  fields: StructField[];
+}
+
+export interface SolidityFunction extends FunctionDef {
+  visibility?: "public" | "private" | "internal" | "external";
+  mutability?: "view" | "pure" | "payable" | "nonpayable";
+}
+
+export interface SolidityType {
+  name: string;
+  isArray: boolean;
+  arraySize?: number;
+  isMapping: boolean;
+  keyType?: string;
+  valueType?: string;
+}
+
+export interface SolidityEnum extends EnumDef {}
+
+export interface SolidityConstant extends ConstantDef {}
+
+export interface SolidityStruct extends StructDef {}
+
+export interface ParsedSolidity {
+  functions: FunctionDef[];
+  enums: SolidityEnum[];
+  constants: SolidityConstant[];
+  structs: SolidityStruct[];
+  imports: string[];
+  libraries: string[];
 }

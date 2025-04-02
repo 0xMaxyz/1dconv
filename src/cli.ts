@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { orchestrate } from "./orchestrate";
+import { converter } from "./converter";
 import path from "path";
 
 async function main() {
@@ -100,7 +100,7 @@ async function main() {
   }
 
   try {
-    await orchestrate({
+    await converter({
       calldataLibPath: resolvedCalldataLibPath,
       outputDir: resolvedOutputDir,
       runTests,
