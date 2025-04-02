@@ -7,6 +7,25 @@ import { validateTestInputs } from "./validateSchema";
 import { generateTestSuite } from "./testInputGenerator";
 import { execSync } from "child_process";
 
+function parseForgeOutput(output: string): string[] {
+  const lines = output.split("\n");
+  const hexOutputs: string[] = [];
+
+  // Look for lines containing log outputs from the Forge script
+  for (const line of lines) {
+    // Check if the line starts with 0x
+    const match = line.match(/0x[0-9a-f]+/i);
+    if (match) {
+      hexOutputs.push(match[0]);
+    }
+  }
+
+  console.log(
+    `Extracted ${hexOutputs.length} expected outputs from Forge script`
+  );
+  return hexOutputs;
+}
+
 export async function converter(config: ConverterConfig) {
   const { calldataLibPath, outputDir, runTests, testCount, verbose } = config;
   let anvilProcess: any = null;
@@ -40,7 +59,34 @@ export async function converter(config: ConverterConfig) {
     fs.writeFileSync(testInputsPath, JSON.stringify(inputs, null, 2));
     fs.writeFileSync(forgeScriptPath, script);
 
-    // 3. Generate tests
+    // 3. Generate and run Forge script to get expected outputs
+    console.log("Generating expected outputs...");
+    let expectedOutputs: string[] = [];
+
+    try {
+      // Run the Forge script and capture its output
+      const forgeOutput = execSync(`forge script ${forgeScriptPath}`, {
+        encoding: "utf8",
+      });
+
+      // Parse the Forge output to extract expected hex outputs
+      expectedOutputs = parseForgeOutput(forgeOutput);
+      console.log(
+        `Extracted ${expectedOutputs.length} expected outputs from Forge script`
+      );
+
+      // Save expected outputs to a file
+      const expectedOutputsPath = path.join(outputDir, "expected-outputs.json");
+      fs.writeFileSync(
+        expectedOutputsPath,
+        JSON.stringify(expectedOutputs, null, 2)
+      );
+    } catch (error) {
+      console.error("Error running Forge script:", error);
+      console.warn("Continuing without expected outputs");
+    }
+
+    // 4. Generate tests
     console.log("Generating tests...");
     const calldataLib = fs.readFileSync(calldataLibPath, "utf8");
     const functions = parseFunctions(calldataLib);
@@ -48,8 +94,11 @@ export async function converter(config: ConverterConfig) {
     const testFileName = baseFileName + ".test.ts";
     const testPath = path.join(outputDir, testFileName);
 
-    // Generate the test file with proper imports
-    let testContent = generateTestSuite(functions);
+    // Generate the test file with proper imports and expected outputs
+    const requiredFunctions = functions.filter((f) =>
+      f.body.includes("abi.encodePacked")
+    );
+    let testContent = generateTestSuite(requiredFunctions, expectedOutputs);
     testContent = testContent
       .replace(
         /import \* as CalldataLib from "\.\/tsCall";/,
@@ -62,14 +111,7 @@ export async function converter(config: ConverterConfig) {
 
     fs.writeFileSync(testPath, testContent);
 
-    // 4. Generate expected outputs
-    console.log("Generate expected outputs..");
-    const forgeOutput = execSync(`forge script ${forgeScriptPath}`, {
-      encoding: "utf8",
-    });
-    console.log(forgeOutput);
-
-    // 4. Run tests if requested
+    // 5. Run tests if requested
     if (runTests) {
       console.log("Running tests...");
       try {

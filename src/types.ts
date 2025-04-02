@@ -11,6 +11,7 @@ export interface FunctionDef {
 }
 
 export interface TestInputs {
+  functionName: string;
   solidityValues: string[];
   typescriptValues: string[];
 }
