@@ -129,7 +129,7 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
       args.forEach((arg) => {
         arg = arg.trim();
 
-        // Skip comments
+        // Skip comments (don't add them to types or values)
         if (arg.startsWith("//")) return;
 
         // Handle ternary operators (e.g., isBase ? uint8(1) : uint8(0))
@@ -141,8 +141,7 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
           return;
         }
 
-        // hardcoded handler for functions that return uint128
-        // TODO: remove this once we have a proper way to handle this
+        // Handle special function calls like generateAmountBitmap and setOverrideAmount
         const specialFunctionMatch = arg.match(
           /(generateAmountBitmap|setOverrideAmount)\((.*)\)/
         );
@@ -164,8 +163,8 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
         // Handle regular type casting
         const castMatch = arg.match(/(\w+)\((.*)\)/);
         if (castMatch) {
-          const castType = castMatch[1];
-          const castValue = castMatch[2];
+          const castType = castMatch[1] || "";
+          const castValue = castMatch[2] || "";
           types.push(castType);
           valueExpressions.push(`${castType}(${castValue})`);
         } else {
@@ -187,11 +186,16 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
       });
 
       // Replace abi.encodePacked with our utility
+      // Clean up any comment-prefixed types like "// bytes" -> "bytes"
+      const cleanedTypes = types.map((type) =>
+        type.startsWith("//") ? type.replace("//", "").trim() : type
+      );
+
       tsBody = tsBody.replace(
         /abi\.encodePacked\((.*)\)/,
-        ` encodePacked(['${types.join("', '")}'], [${valueExpressions.join(
-          ", "
-        )}])`
+        ` encodePacked(['${cleanedTypes.join(
+          "', '"
+        )}'], [${valueExpressions.join(", ")}])`
       );
     }
   }
