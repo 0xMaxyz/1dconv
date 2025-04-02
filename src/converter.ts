@@ -1,18 +1,15 @@
 import * as fs from "fs";
 import path from "path";
-import type { OrchestrationConfig } from "./types";
+import type { ConverterConfig } from "./types";
 import { processImports, parseFunctions } from "./parser";
 import { generateForgeScript } from "./generateForgeScript";
-import { CLIENT_RENEG_LIMIT } from "tls";
 import { validateTestInputs } from "./validateSchema";
 import { generateTestSuite } from "./testInputGenerator";
 import { execSync } from "child_process";
 
-export async function converter(config: OrchestrationConfig) {
-  const { calldataLibPath, outputDir, runTests, port, testCount, verbose } =
-    config;
+export async function converter(config: ConverterConfig) {
+  const { calldataLibPath, outputDir, runTests, testCount, verbose } = config;
   let anvilProcess: any = null;
-  let anvilPort = port || 43543;
   let numTestRuns = testCount || 1; // Todo: Implement testCount
 
   // Ensure output directory exists
@@ -64,6 +61,13 @@ export async function converter(config: OrchestrationConfig) {
       );
 
     fs.writeFileSync(testPath, testContent);
+
+    // 4. Generate expected outputs
+    console.log("Generate expected outputs..");
+    const forgeOutput = execSync(`forge script ${forgeScriptPath}`, {
+      encoding: "utf8",
+    });
+    console.log(forgeOutput);
 
     // 4. Run tests if requested
     if (runTests) {

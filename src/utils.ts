@@ -66,22 +66,3 @@ export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
   if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | shiftLeft(1n, 127));
   return am;
 }
-
-/**
- * Parse the Forge output to extract the bytes results
- * @param output - The output from the Forge script
- * @returns Array of extracted bytes results
- */
-export function parseForgeOutput(output: string): string[] {
-  const outputs: string[] = [];
-  const lines = output.split("\n");
-  for (const line of lines) {
-    if (line?.includes("bytes")) {
-      const parts = line.split(":");
-      if (parts.length > 1) {
-        outputs.push(parts[1]!.trim());
-      }
-    }
-  }
-  return outputs;
-}

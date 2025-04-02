@@ -15,11 +15,10 @@ export interface TestInputs {
   typescriptValues: string[];
 }
 
-export interface OrchestrationConfig {
+export interface ConverterConfig {
   calldataLibPath: string;
   outputDir: string;
   runTests?: boolean;
-  port?: number;
   testCount?: number;
   verbose?: boolean;
 }
