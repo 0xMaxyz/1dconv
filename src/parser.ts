@@ -81,7 +81,7 @@ function parseConstants(content: string): SolidityConstant[] {
  * @param solidityCode - Complete Solidity code as a string
  * @returns An array of FunctionDef objects
  */
-function parseFunctions(solidityCode: string): FunctionDef[] {
+export function parseFunctions(solidityCode: string): FunctionDef[] {
   const functions: FunctionDef[] = [];
 
   // Match function definitions with their bodies
