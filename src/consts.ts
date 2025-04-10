@@ -5,3 +5,9 @@ export const CALLDATA_LIB_URL = `${BASE_REPO_URL}${CALLDATA_LIB_PATH}`;
 
 export const INPUT_DIR = "./data/input";
 export const OUTPUT_DIR = "./data/output";
+export const HARDCODED_FUNCTIONS = [
+  "generateAmountBitmap",
+  "setOverrideAmount",
+  "getMorphoCollateral",
+  "getMorphoLoanAsset",
+];
