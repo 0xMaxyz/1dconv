@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { converter } from "./converter";
 import path from "path";
-
+import { handleFiles } from "./fileHandler";
+import { CALLDATA_LIB_URL, OUTPUT_DIR } from "./consts";
 async function main() {
   const args = process.argv.slice(2);
   console.log(
@@ -25,20 +26,14 @@ async function main() {
 `
   );
   const usage =
-    "Usage: bun run cli.ts <calldataLibPath> [outputDir] [--run-tests] [--port <port>] [--test-count <count>] [--verbose]";
-
-  if (args.length < 1) {
-    console.error(usage);
-    process.exit(1);
-  }
+    "Usage: bun run cli.ts [outputDir] [--run-tests] [--test-count <count>] [--verbose]";
 
   // Parse flags
   let runTests = false;
-  let calldataLibPath: string | undefined;
   let outputDir: string | undefined;
-  let port: number | undefined;
   let testCount: number | undefined;
   let verbose = false;
+
   // Process arguments
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -53,21 +48,9 @@ async function main() {
       continue;
     }
 
-    if (arg === "--port" && i + 1 < args.length && args[i + 1]) {
-      port = parseInt(args[i + 1]!);
-      i++; // Skip the next argument (port number)
-      continue;
-    }
-
     if (arg === "--test-count" && i + 1 < args.length && args[i + 1]) {
       testCount = parseInt(args[i + 1]!);
       i++; // Skip the next argument (test count)
-      continue;
-    }
-
-    // If we haven't set the calldataLibPath yet, this argument is the input file
-    if (!calldataLibPath) {
-      calldataLibPath = arg;
       continue;
     }
 
@@ -78,33 +61,29 @@ async function main() {
     }
   }
 
-  // Ensure we have a valid calldataLibPath
-  if (!calldataLibPath) {
-    console.error("Error: Missing calldataLibPath");
-    console.error(usage);
-    process.exit(1);
-  }
-
-  // absolute paths
-  const resolvedCalldataLibPath = path.resolve(calldataLibPath);
-
   // default output dir
   const resolvedOutputDir = outputDir
     ? path.resolve(outputDir)
-    : path.resolve("./data/output");
+    : path.resolve(OUTPUT_DIR);
 
   // Debug
   if (verbose) {
-    console.log(`Input file: ${resolvedCalldataLibPath}`);
     console.log(`Output directory: ${resolvedOutputDir}`);
   }
 
   try {
+    console.log("Downloading calldatalib from git repository ...");
+    // download the file from git repo
+    await handleFiles({
+      mainFile: CALLDATA_LIB_URL,
+      verbose,
+    });
+
+    // Then process them
     await converter({
-      calldataLibPath: resolvedCalldataLibPath,
+      calldataLibPath: path.resolve("./data/input/CalldataLib.sol"),
       outputDir: resolvedOutputDir,
       runTests,
-      port,
       testCount,
       verbose,
     });
