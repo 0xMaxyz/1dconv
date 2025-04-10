@@ -72,7 +72,7 @@ async function main() {
   }
 
   try {
-    console.log("Downloading calldatalib from git repository ...");
+    console.log("Downloading calldatalib from git repository ...\n");
     // download the file from git repo
     await handleFiles({
       mainFile: CALLDATA_LIB_URL,

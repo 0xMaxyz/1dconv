@@ -216,7 +216,10 @@ function combineContent(
   // Process all imports recursively
   if (imports) {
     for (const importPath of imports) {
-      const resolvedPath = path.resolve(path.dirname(filePath), importPath);
+      const resolvedPath = path.resolve(
+        path.dirname(filePath),
+        path.basename(importPath)
+      );
       // Recursively get the content of this import and its imports
       const importedContent = combineContent(
         resolvedPath,
