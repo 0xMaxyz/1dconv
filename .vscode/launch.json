@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug Bun",
       "program": "${workspaceFolder}/src/cli.ts",
-      "args": ["${workspaceFolder}/data/input/CalldataLib.sol"],
+      "args": ["--run-tests"],
       "cwd": "${workspaceFolder}",
       "env": {},
       "strictEnv": false,

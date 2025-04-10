@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run src/cli.ts  --run-tests",
+    "start": "bun run src/cli.ts--run-tests",
     "test": "bun test",
     "build": "bun build --target bun ./src/cli.ts --outdir ./dist"
   },
