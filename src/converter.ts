@@ -28,7 +28,6 @@ function parseForgeOutput(output: string): string[] {
 
 export async function converter(config: ConverterConfig) {
   const { calldataLibPath, outputDir, runTests, testCount, verbose } = config;
-  let anvilProcess: any = null;
   let numTestRuns = testCount || 1; // Todo: Implement testCount
 
   // Ensure output directory exists
@@ -127,16 +126,5 @@ export async function converter(config: ConverterConfig) {
   } catch (error) {
     console.error("Error:", error);
     throw error;
-  } finally {
-    if (anvilProcess && !anvilProcess.killed) {
-      try {
-        process.kill(-anvilProcess.pid, "SIGTERM");
-        console.log("Anvil process terminated");
-      } catch (error) {
-        console.log(
-          "Note: Anvil process may still be running in the background"
-        );
-      }
-    }
   }
 }
