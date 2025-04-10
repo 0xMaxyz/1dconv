@@ -43,15 +43,18 @@ function parseStructs(content: string): SolidityStruct[] {
       const parsedFields: StructField[] = fields
         .split("\n")
         .map((field) => field.trim())
-        .filter((field) => field && !field.startsWith("//"))
+        .filter((field) => field && !field.startsWith("//") && field.length > 0)
         .map((field) => {
-          const parts = field.split(" ").filter((p) => p);
+          const parts = field
+            .replace(/;$/, "")
+            .split(/\s+/)
+            .filter((p) => p);
           if (parts.length === 2) {
             const [type, name] = parts;
             if (!type || !name) {
               throw new Error(`Invalid struct field format: ${field}`);
             }
-            return { type, name };
+            return { type, name: name.replace(/;$/, "") };
           }
           throw new Error(`Invalid struct field format: ${field}`);
         });
