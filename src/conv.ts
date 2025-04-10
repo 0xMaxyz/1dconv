@@ -2,7 +2,7 @@ import { parseSolidity } from "./parser";
 import type { SolidityStruct, FunctionDef } from "./types";
 import * as fs from "fs";
 import * as path from "path";
-
+import { HARDCODED_FUNCTIONS } from "./consts";
 const TYPE_MAP: Record<string, string> = {
   uint8: "number",
   uint16: "number",
@@ -279,7 +279,7 @@ export function convertToTS(
 
   output += `
   import { type Hex, type Address, encodePacked } from "viem";
-  import { uint128, uint8, uint112, uint16, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount } from "../../src/utils.ts";
+  import { uint128, uint8, uint112, uint16, uint256, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset } from "../../src/utils.ts";
   `;
 
   // Add enum definitions
@@ -310,10 +310,9 @@ export function convertToTS(
   //   output += `export const ${constant.name} = ${constant.value};\n`;
   // });
 
-  const hardcodedFunctions = ["generateAmountBitmap", "setOverrideAmount"];
   // Convert functions
   functions
-    .filter((func) => !hardcodedFunctions.includes(func.name))
+    .filter((func) => !HARDCODED_FUNCTIONS.includes(func.name))
     .forEach((func) => {
       // Function signature
       output += `export function ${func.name}(`;
@@ -327,6 +326,16 @@ export function convertToTS(
         // then convert this
         body = convertAbiEncodePacked(func);
       }
+      body = body
+        .replaceAll("revert", "throw new Error")
+        .replaceAll("returnnewbytes(0)", "return `0x0` as Hex;\n")
+        .replaceAll("==", "===")
+        .replaceAll("!=", "!==")
+        .replaceAll("bytesmemory", "const ")
+        .replaceAll("return", "return ")
+        .replaceAll(/=\s*(\d+)(?!n\b)/g, "= $1n")
+        .replaceAll("type(uint120).max", "0xffffffffffffffffffffffffffffffn")
+        .replaceAll("address(0)", "zeroAddress");
 
       output += body;
       output += "}\n\n";

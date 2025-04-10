@@ -1,4 +1,9 @@
-import { concat, type Hex, encodePacked as abiEncodePacked } from "viem";
+import {
+  concat,
+  type Hex,
+  encodePacked as abiEncodePacked,
+  type Address,
+} from "viem";
 
 export const _PRE_PARAM = 1n << 127n;
 export const _SHARES_MASK = 1n << 126n;
@@ -65,4 +70,18 @@ export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
   let am = uint128(amount);
   if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | shiftLeft(1n, 127));
   return am;
+}
+
+export function getMorphoCollateral(market: any): Address {
+  const slice = market.slice(52, 72); // Take 20 bytes starting at position 52
+  return `0x${Buffer.from(slice).toString("hex")}` as Address;
+}
+
+export function getMorphoLoanAsset(market: any): Address {
+  const slice = market.slice(32, 52); // Take 20 bytes starting at position 32
+  return `0x${Buffer.from(slice).toString("hex")}` as Address;
+}
+
+export function newbytes(length: number): Hex {
+  return ("0x" + "0".repeat(length * 2)) as Hex;
 }
