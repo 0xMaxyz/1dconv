@@ -133,6 +133,10 @@ function parseTernaryType(
     // Check for function calls
     const funcMatch = expr.match(/(\w+)\((.*)\)/);
     if (funcMatch) {
+      if (funcMatch[1]?.startsWith("uint")) {
+        // for casts
+        return funcMatch[1];
+      }
       return getFunctionReturnType(funcMatch[1], functions);
     }
 
