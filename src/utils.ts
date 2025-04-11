@@ -85,3 +85,7 @@ export function getMorphoLoanAsset(market: any): Address {
 export function newbytes(length: number): Hex {
   return ("0x" + "0".repeat(length * 2)) as Hex;
 }
+
+export function bytes(value: Hex): Hex {
+  return value;
+}

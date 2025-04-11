@@ -107,7 +107,9 @@ export function parseFunctions(solidityCode: string): FunctionDef[] {
         // Handle complex types with spaces (like "bytes memory")
         if (paramParts.length > 2) {
           const paramName = paramParts.pop() || "";
-          const paramType = paramParts.join(" ");
+          // const paramType = paramParts.join(" ");
+          const paramType = paramParts[0]!;
+
           return { type: paramType, name: paramName };
         } else if (paramParts.length === 2) {
           const [type, name] = paramParts;
@@ -120,17 +122,17 @@ export function parseFunctions(solidityCode: string): FunctionDef[] {
     // Extract return type (removing "memory" if present)
     let returnType = returnTypeStr ? returnTypeStr.trim() : "";
     if (returnType.includes(" ")) {
-      returnType = returnType.split(/\s+/)[0]; // Take just the type, not modifiers like "memory"
+      returnType = returnType.split(/\s+/)[0]!; // Take just the type, not modifiers like "memory"
     }
 
     // Clean up the body (remove all whitespace including newlines, spaces, and tabs)
-    const cleanBody = body
+    const cleanBody = body!
       .replace(/\/\/.*$/gm, "") // Remove comments
       .replace(/\s+/g, "") // Remove all whitespace (spaces, tabs, newlines)
       .trim();
 
     functions.push({
-      name,
+      name: name!,
       params,
       returnType,
       body: cleanBody,

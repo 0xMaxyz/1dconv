@@ -1,7 +1,5 @@
 import { parseSolidity } from "./parser";
 import type { SolidityStruct, FunctionDef } from "./types";
-import * as fs from "fs";
-import * as path from "path";
 import { HARDCODED_FUNCTIONS } from "./consts";
 const TYPE_MAP: Record<string, string> = {
   uint8: "number",
@@ -100,11 +98,69 @@ function convertType(
   return TYPE_MAP[solidityType] || "any";
 }
 
-function convertAbiEncodePacked(funcDef: FunctionDef): string {
+function getFunctionReturnType(
+  functionName: string,
+  functions: FunctionDef[]
+): string {
+  const func = functions.find((f) => f.name === functionName);
+  return func?.returnType || "bytes"; // Default to bytes if function not found
+}
+
+// Add helper to parse ternary expressions
+function parseTernaryType(
+  expression: string,
+  functions: FunctionDef[]
+): string {
+  // Case A: Direct type cast with ternary
+  const castMatch = expression.match(/(\w+)\((.*\?.*:.*)\)/);
+  if (castMatch) {
+    const castType = castMatch[1];
+    return castType; // Return the explicit cast type
+  }
+
+  // Case B: Ternary with function calls
+  const [condition, truePart, falsePart] = expression
+    .split(/\?|:/)
+    .map((p) => p.trim());
+
+  // Helper to get type from expression
+  const getExprType = (expr: string): string => {
+    // Check for new bytes(0)
+    if (expr.match(/new\s+bytes\s*\(\d+\)/)) {
+      return "bytes";
+    }
+
+    // Check for function calls
+    const funcMatch = expr.match(/(\w+)\((.*)\)/);
+    if (funcMatch) {
+      return getFunctionReturnType(funcMatch[1], functions);
+    }
+
+    // Check for type casts
+    const typeCastMatch = expr.match(/(\w+)\((.*)\)/);
+    if (typeCastMatch) {
+      return typeCastMatch[1];
+    }
+
+    return "bytes"; // Default fallback
+  };
+
+  // Get types from both branches
+  const trueType = getExprType(truePart);
+  const falseType = getExprType(falsePart);
+
+  // Types should match in a ternary, return either
+  return trueType;
+}
+
+function convertAbiEncodePacked(
+  funcDef: FunctionDef,
+  allFunctions: FunctionDef[]
+): string {
   // Convert parameters with their types
   const tsParams = funcDef.params
     .map((param) => {
-      const tsType = TYPE_MAP[param.type] || "any"; // Fallback to 'any' if type not found
+      const tsType = TYPE_MAP[param.type] || "any";
       return `${param.name}: ${tsType}`;
     })
     .join(", ");
@@ -132,22 +188,24 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
         // Skip comments (don't add them to types or values)
         if (arg.startsWith("//")) return;
 
-        // Handle ternary operators (e.g., isBase ? uint8(1) : uint8(0))
+        // Handle ternary operators
         if (arg.includes("?")) {
-          // Extract type from ternary expression (usually uint8)
-          const castType = arg.match(/uint\d+/)?.[0] || "uint8";
-          types.push(castType);
-          valueExpressions.push(arg); // Keep the ternary as is
+          const inferredType = parseTernaryType(arg, allFunctions);
+          types.push(inferredType);
+          valueExpressions.push(arg);
           return;
         }
 
-        // Handle special function calls like generateAmountBitmap and setOverrideAmount
-        const specialFunctionMatch = arg.match(
-          /(generateAmountBitmap|setOverrideAmount)\((.*)\)/
-        );
-        if (specialFunctionMatch) {
-          // These functions return uint128
-          types.push("uint128");
+        // Handle function calls
+        const functionCallMatch = arg.match(/(\w+)\((.*)\)/);
+        if (
+          functionCallMatch &&
+          !arg.startsWith("uint") && // filter out casts
+          !arg.startsWith("bytes") // filter out casts
+        ) {
+          const [_, funcName] = functionCallMatch;
+          const returnType = getFunctionReturnType(funcName, allFunctions);
+          types.push(returnType);
           valueExpressions.push(arg);
           return;
         }
@@ -179,9 +237,11 @@ function convertAbiEncodePacked(funcDef: FunctionDef): string {
             .replace(" memory", "")
             .replace(" calldata", "")
             .trim();
-
+          if (!Object.keys(TYPE_MAP).includes(paramType)) {
+            paramType = "bytes";
+          }
           types.push(paramType);
-          valueExpressions.push(argName);
+          valueExpressions.push(arg);
         }
       });
 
@@ -278,15 +338,15 @@ export function convertToTS(
   let output = "";
 
   output += `
-  import { type Hex, type Address, encodePacked } from "viem";
+  import { type Hex, type Address, encodePacked, zeroAddress } from "viem";
   import { uint128, uint8, uint112, uint16, uint256, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset } from "../../src/utils.ts";
   `;
 
   // Add enum definitions
   enums.forEach((enumDef) => {
     output += `export enum ${enumDef.name} {\n`;
-    enumDef.values.forEach((value) => {
-      output += `  ${value.name} = "${value.name}",\n`;
+    enumDef.values.forEach((value, index) => {
+      output += `  ${value.name} = ${index},\n`;
     });
     output += "}\n\n";
   });
@@ -305,11 +365,6 @@ export function convertToTS(
     output += "}\n\n";
   });
 
-  // Add constant definitions
-  // constants.forEach((constant) => {
-  //   output += `export const ${constant.name} = ${constant.value};\n`;
-  // });
-
   // Convert functions
   functions
     .filter((func) => !HARDCODED_FUNCTIONS.includes(func.name))
@@ -324,7 +379,7 @@ export function convertToTS(
       let body = func.body;
       if (body.includes("abi.encodePacked")) {
         // then convert this
-        body = convertAbiEncodePacked(func);
+        body = convertAbiEncodePacked(func, functions);
       }
       body = body
         .replaceAll("revert", "throw new Error")
