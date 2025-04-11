@@ -1,19 +1,27 @@
 import * as fs from "fs";
 import { parseFunctions } from "./parser";
 import { generateTestInputs } from "./testInputGenerator";
-import type { TestInputs, FunctionDef } from "./types";
+import type {
+  TestInputs,
+  FunctionDef,
+  SolidityEnum,
+  MergedDefinitions,
+} from "./types";
+import { HARDCODED_FUNCTIONS, INPUT_DIR, OUTPUT_DIR } from "./consts";
 
 /**
  * Generates a Forge script to test CalldataLib functions
  * @param calldataLibPath - Path to the CalldataLib.sol file
  * @returns Object containing the generated script and test inputs
  */
-export function generateForgeScript(calldataLibPath: string): {
+export function generateForgeScript(
+  libPath: string,
+  functions: FunctionDef[],
+  enums: SolidityEnum[]
+): {
   script: string;
   inputs: TestInputs[];
 } {
-  const calldataLib = fs.readFileSync(calldataLibPath, "utf8");
-  const functions = parseFunctions(calldataLib);
   const allTestInputs: TestInputs[] = [];
 
   let forgeScript = `
@@ -22,7 +30,7 @@ pragma solidity ^0.8.28;
 
 import "forge-std/Script.sol";
 import "forge-std/console.sol";
-import "../input/CalldataLib.sol";
+import {CalldataLib} from "../input/CalldataLib.sol";
 
 contract GenerateCalldata is Script {
     function setUp() public {}
@@ -32,18 +40,20 @@ contract GenerateCalldata is Script {
 `;
 
   functions.forEach((func, index) => {
-    // Skip utility functions that are imported from utils.ts
-    if (isUtilityFunction(func.name)) {
+    // Skip hardcoded functions
+    if (isHardCodedFunction(func.name)) {
       return;
     }
 
-    const testInputs = generateTestInputs(func);
+    const testInputs = generateTestInputs(func, enums);
     allTestInputs.push(testInputs);
 
     // Handle special cases for enum parameters
-    const modifiedSolidityValues = processEnumParameters(func, [
-      ...testInputs.solidityValues,
-    ]);
+    const modifiedSolidityValues = processEnumParameters(
+      func,
+      [...testInputs.solidityValues],
+      enums
+    );
 
     // Determine if this is a special function that returns non-bytes type
     const isSpecialReturnType = hasSpecialReturnType(func);
@@ -70,18 +80,18 @@ contract GenerateCalldata is Script {
   return { script: forgeScript, inputs: allTestInputs };
 }
 
-/**
- * Checks if a function is a utility function that should be skipped
- */
-function isUtilityFunction(functionName: string): boolean {
-  const utilityFunctions = ["generateAmountBitmap", "setOverrideAmount"];
-  return utilityFunctions.includes(functionName);
+function isHardCodedFunction(functionName: string): boolean {
+  return HARDCODED_FUNCTIONS.includes(functionName);
 }
 
 /**
  * Process enum parameters to replace numeric values with proper enum values
  */
-function processEnumParameters(func: FunctionDef, values: string[]): string[] {
+function processEnumParameters(
+  func: FunctionDef,
+  values: string[],
+  enums: SolidityEnum[]
+): string[] {
   // Handle SweepType enum in the sweep and unwrap functions
   if (func.name === "sweep" || func.name === "unwrap") {
     // Find the index of the SweepType parameter
@@ -152,3 +162,22 @@ function logFunctionForReturnType(returnType: string): string {
     throw new Error("Unhandled return type: " + returnType);
   }
 }
+
+// function extractDefinitionsFromFile(filePath: string): MergedDefinitions {
+//   const content = fs.readFileSync(filePath, "utf8");
+//   const { libraries, enums, structs } = parseSolidity(content);
+
+//   return {
+//     libraries: libraries.map((lib) => lib.trim()),
+//     enums: enums.map(
+//       (e) => `enum ${e.name} {
+//       ${e.values.map((v) => v.name).join(",\n      ")}
+//     }`
+//     ),
+//     structs: structs.map(
+//       (s) => `struct ${s.name} {
+//       ${s.fields.map((f) => `${f.type} ${f.name};`).join("\n      ")}
+//     }`
+//     ),
+//   };
+// }

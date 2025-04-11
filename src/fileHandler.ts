@@ -80,4 +80,32 @@ export async function handleFiles(config: FileHandlerConfig): Promise<void> {
 
   // Process imports recursively
   await processImports(localMainPath, baseRepoUrl, inputDir);
+
+  await modifyImportsAndComments(inputDir);
+}
+
+async function modifyImportsAndComments(inputDir: string) {
+  const files = fs.readdirSync(inputDir);
+  if (files) {
+    files.forEach((file) => {
+      const filePath = path.join(inputDir, file);
+      if (file.endsWith(".sol")) {
+        let content = fs.readFileSync(filePath, "utf-8");
+
+        // Convert import statements to relative paths
+        content = content.replace(
+          /import\s+["']([^"']+\/)?([^\/"']+)["'];/g,
+          'import "./$2";'
+        );
+
+        // Remove block comments
+        content = content.replace(/\/\*[\s\S]*?\*\//g, "");
+        // Remove line comments
+        content = content.replace(/\/\/.*$/gm, "");
+
+        // Write the modified content back to the file
+        fs.writeFileSync(filePath, content);
+      }
+    });
+  }
 }

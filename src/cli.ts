@@ -2,7 +2,7 @@
 import { converter } from "./converter";
 import path from "path";
 import { handleFiles } from "./fileHandler";
-import { CALLDATA_LIB_URL, OUTPUT_DIR } from "./consts";
+import { CALLDATA_LIB_URL, INPUT_DIR, OUTPUT_DIR } from "./consts";
 async function main() {
   const args = process.argv.slice(2);
   console.log(
@@ -81,7 +81,7 @@ async function main() {
 
     // Then process them
     await converter({
-      calldataLibPath: path.resolve("./data/input/CalldataLib.sol"),
+      calldataLibPath: path.resolve(`${INPUT_DIR}/CalldataLib.sol`),
       outputDir: resolvedOutputDir,
       runTests,
       testCount,

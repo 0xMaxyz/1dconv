@@ -11,14 +11,16 @@ import type {
 } from "./types";
 import * as path from "path";
 import { convertToTS } from "./conv";
+import { COMBINED_LIB_FILE, INPUT_DIR, LIB_NAME } from "./consts";
 
-export function parseEnums(content: string): SolidityEnum[] {
+export function parseEnums(content: string) {
   const enumRegex = /enum\s+(\w+)\s*{([^}]*)}/g;
   const enums: SolidityEnum[] = [];
   let match;
-
+  const enumSolCode: string[] = [];
   while ((match = enumRegex.exec(content)) !== null) {
-    const [_, name, values] = match;
+    const [code, name, values] = match;
+    enumSolCode.push(code);
     if (name && values) {
       const parsedValues = values
         .split(",")
@@ -30,15 +32,17 @@ export function parseEnums(content: string): SolidityEnum[] {
     }
   }
 
-  return enums;
+  return { enums, enumSolCode };
 }
 
-function parseStructs(content: string): SolidityStruct[] {
+function parseStructs(content: string) {
   const structRegex = /struct\s+(\w+)\s*{([^}]*)}/g;
   const structs: SolidityStruct[] = [];
+  const structSolCode: string[] = [];
   let match;
   while ((match = structRegex.exec(content)) !== null) {
-    const [_, name, fields] = match;
+    const [code, name, fields] = match;
+    structSolCode.push(code);
     if (name && fields) {
       const parsedFields: StructField[] = fields
         .split("\n")
@@ -63,7 +67,7 @@ function parseStructs(content: string): SolidityStruct[] {
     }
   }
 
-  return structs;
+  return { structs, structSolCode };
 }
 
 function parseConstants(content: string): SolidityConstant[] {
@@ -127,7 +131,6 @@ export function parseFunctions(solidityCode: string): FunctionDef[] {
 
     // Clean up the body (remove all whitespace including newlines, spaces, and tabs)
     const cleanBody = body!
-      .replace(/\/\/.*$/gm, "") // Remove comments
       .replace(/\s+/g, "") // Remove all whitespace (spaces, tabs, newlines)
       .trim();
 
@@ -147,7 +150,7 @@ function parseLibraries(content: string): string[] {
   const libraries: string[] = [];
   let match;
   while ((match = libraryRegex.exec(content)) !== null) {
-    if (match[1]) {
+    if (match[1] && match[1] !== LIB_NAME) {
       libraries.push(match[0]);
     }
   }
@@ -177,10 +180,10 @@ export function parseSolidity(
   debug: boolean = false
 ): ParsedSolidity {
   // Parse structs
-  const structs = parseStructs(content);
+  const { structs, structSolCode } = parseStructs(content);
 
   // Parse enums
-  const enums = parseEnums(content);
+  const { enums, enumSolCode } = parseEnums(content);
 
   // Parse constants
   const constants = parseConstants(content);
@@ -240,19 +243,40 @@ function combineContent(
   return content.replace(/import\s+["'](.+?)["'];/g, "");
 }
 
-export function processImports(
+export async function processImports(
   filePath: string,
   outputDir: string,
   debug: boolean = false
-): void {
+) {
   // Combine to one file
   const combinedContent = combineContent(filePath, new Set(), debug);
-
   // Convert the combined content to TypeScript
-  const tsCode = convertToTS(combinedContent);
+  const { output, functions, enums, constants, structs, imports, libraries } =
+    convertToTS(combinedContent);
 
   // Save the combined TypeScript file
   const outputFileName = path.basename(filePath, ".sol") + ".ts";
   const outputPath = path.join(outputDir, outputFileName);
-  fs.writeFileSync(outputPath, tsCode);
+  fs.writeFileSync(outputPath, output);
+  return { functions, enums, constants, structs, imports, libraries };
+}
+
+function cleanupPragmas(content: string): string {
+  // Find all pragma statements
+  const pragmaRegex = /pragma\s+solidity\s+[^;]+;/g;
+  const pragmas = content.match(pragmaRegex) || [];
+
+  if (pragmas.length <= 1) {
+    return content;
+  }
+
+  // Keep the first pragma and remove all others
+  const firstPragma = pragmas[0];
+  let cleanedContent = content;
+
+  cleanedContent = cleanedContent.replace(pragmaRegex, "");
+
+  cleanedContent = firstPragma + "\n\n" + cleanedContent.trim();
+
+  return cleanedContent;
 }

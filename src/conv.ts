@@ -1,5 +1,5 @@
 import { parseSolidity } from "./parser";
-import type { SolidityStruct, FunctionDef } from "./types";
+import type { SolidityStruct, FunctionDef, ConverterOutput } from "./types";
 import { HARDCODED_FUNCTIONS } from "./consts";
 const TYPE_MAP: Record<string, string> = {
   uint8: "number",
@@ -335,7 +335,7 @@ function convertLib2Enum(libCode: string): string {
 export function convertToTS(
   solidityCode: string,
   debug: boolean = false
-): string {
+): ConverterOutput {
   const { functions, enums, constants, structs, imports, libraries } =
     parseSolidity(solidityCode);
 
@@ -394,11 +394,20 @@ export function convertToTS(
         .replaceAll("return", "return ")
         .replaceAll(/=\s*(\d+)(?!n\b)/g, "= $1n")
         .replaceAll("type(uint120).max", "0xffffffffffffffffffffffffffffffn")
-        .replaceAll("address(0)", "zeroAddress");
+        .replaceAll("address(0)", "zeroAddress")
+        .replaceAll(/\.length\s*===\s*0n/g, ".length === 0");
 
       output += body;
       output += "}\n\n";
     });
 
-  return output;
+  return {
+    output,
+    functions,
+    enums,
+    constants,
+    structs,
+    imports,
+    libraries,
+  };
 }

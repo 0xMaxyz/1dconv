@@ -80,3 +80,19 @@ export interface ParsedSolidity {
   imports: string[];
   libraries: string[];
 }
+
+export interface ConverterOutput {
+  output: string;
+  functions: FunctionDef[];
+  enums: SolidityEnum[];
+  constants: SolidityConstant[];
+  structs: SolidityStruct[];
+  imports: string[];
+  libraries: string[];
+}
+
+export interface MergedDefinitions {
+  libraries: string[];
+  enums: string[];
+  structs: string[];
+}

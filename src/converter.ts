@@ -41,11 +41,16 @@ export async function converter(config: ConverterConfig) {
     const tsFileName = baseFileName + ".ts";
     const tsOutputPath = path.join(outputDir, tsFileName);
 
-    processImports(calldataLibPath, outputDir, verbose);
+    const { functions, enums, constants, structs, libraries } =
+      await processImports(calldataLibPath, outputDir, verbose);
 
     // 2. Generate test inputs and Forge script
     console.log("Generating Forge script and test inputs...");
-    const { script, inputs } = generateForgeScript(calldataLibPath);
+    const { script, inputs } = generateForgeScript(
+      calldataLibPath,
+      functions,
+      enums
+    );
     // Validate test inputs
     if (!validateTestInputs(inputs)) {
       throw new Error("Invalid test input format");
@@ -87,8 +92,6 @@ export async function converter(config: ConverterConfig) {
 
     // 4. Generate tests
     console.log("Generating tests...");
-    const calldataLib = fs.readFileSync(calldataLibPath, "utf8");
-    const functions = parseFunctions(calldataLib);
 
     const testFileName = baseFileName + ".test.ts";
     const testPath = path.join(outputDir, testFileName);

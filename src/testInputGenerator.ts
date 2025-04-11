@@ -1,18 +1,25 @@
-import type { FunctionDef, TestInputs } from "./types";
+import type { FunctionDef, SolidityEnum, TestInputs } from "./types";
 
 /**
  * Generates test inputs for a given function definition.
  * @param func - The function definition to generate test inputs for.
  * @returns The generated test inputs.
  */
-export function generateTestInputs(func: FunctionDef): TestInputs {
+export function generateTestInputs(
+  func: FunctionDef,
+  enums: SolidityEnum[]
+): TestInputs {
   const solidity: string[] = [];
   const typescript: string[] = [];
 
   func.params.forEach((param) => {
     // First normalize the type by removing comments
     const normalizedType = param.type.replace(/\/\/\s*/, "").trim();
-    const { solValue, tsValue } = generateValuePair(normalizedType, param.name);
+    const { solValue, tsValue } = generateValuePair(
+      normalizedType,
+      param.name,
+      enums
+    );
     solidity.push(solValue);
     typescript.push(tsValue);
   });
@@ -32,7 +39,8 @@ export function generateTestInputs(func: FunctionDef): TestInputs {
  */
 function generateValuePair(
   type: string,
-  paramName: string = ""
+  paramName: string = "",
+  enums: SolidityEnum[]
 ): {
   solValue: string;
   tsValue: string;
@@ -45,11 +53,15 @@ function generateValuePair(
     .trim();
 
   // Special handling for enum types
-  if (cleanType === "SweepType" || paramName === "sweepType") {
-    return {
-      solValue: "0", // VALIDATE value (0)
-      tsValue: "0", // Use a numeric value for compatibility with encodePacked
-    };
+  if (enums) {
+    const isEnum = enums.find((e) => e.name === cleanType);
+    if (isEnum) {
+      const enumValue = isEnum.values[0]!;
+      return {
+        solValue: `${isEnum.name}.${enumValue.name}`,
+        tsValue: "0",
+      };
+    }
   }
 
   // Handle 'bytes' or 'bytes memory' type
