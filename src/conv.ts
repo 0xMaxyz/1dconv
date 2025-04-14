@@ -247,7 +247,11 @@ function convertAbiEncodePacked(
             paramType = "bytes";
           }
           types.push(paramType);
-          valueExpressions.push(arg);
+          if (paramType.startsWith("bytes")) {
+            valueExpressions.push("`0x${" + arg + ".toHex()}`");
+          } else {
+            valueExpressions.push(arg);
+          }
         }
       });
 
