@@ -1,12 +1,19 @@
 import * as fs from "fs";
 import path from "path";
 import type { ConverterConfig } from "./types";
-import { processImports, parseFunctions } from "./parser";
+import {
+  processImports,
+  parseFunctions,
+  combineContent,
+  cleanupPragmas,
+  parseSolidity,
+} from "./parser";
 import { generateForgeScript } from "./generateForgeScript";
 import { validateTestInputs } from "./validateSchema";
 import { generateTestSuite } from "./testInputGenerator";
 import { execSync } from "child_process";
-
+import { LibCache } from "./libCache";
+import { convertToTS } from "./conv";
 function parseForgeOutput(output: string): string[] {
   const lines = output.split("\n");
   const hexOutputs: string[] = [];
@@ -28,6 +35,7 @@ function parseForgeOutput(output: string): string[] {
 
 export async function converter(config: ConverterConfig) {
   const { calldataLibPath, outputDir, runTests, testCount, verbose } = config;
+  const cache = LibCache.getInstance();
   let numTestRuns = testCount || 1; // Todo: Implement testCount
 
   // Ensure output directory exists
@@ -41,8 +49,18 @@ export async function converter(config: ConverterConfig) {
     const tsFileName = baseFileName + ".ts";
     const tsOutputPath = path.join(outputDir, tsFileName);
 
-    const { functions, enums, constants, structs, libraries } =
-      await processImports(calldataLibPath, outputDir, verbose);
+    // process imports and cache them
+    await processImports(calldataLibPath, outputDir, verbose);
+
+    // combine solidity files
+    let combinedContent = combineContent(calldataLibPath, new Set(), verbose);
+    combinedContent = cleanupPragmas(combinedContent);
+
+    const { output, functions, enums, constants, structs, libraries } =
+      convertToTS(combinedContent, verbose);
+
+    // write output
+    fs.writeFileSync(tsOutputPath, output);
 
     // 2. Generate test inputs and Forge script
     console.log("Generating Forge script and test inputs...");

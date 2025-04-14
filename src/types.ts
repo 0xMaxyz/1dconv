@@ -10,6 +10,11 @@ export interface FunctionDef {
   body: string;
 }
 
+export interface LibraryDef {
+  name: string;
+  code: string;
+}
+
 export interface TestInputs {
   functionName: string;
   solidityValues: string[];
@@ -78,7 +83,7 @@ export interface ParsedSolidity {
   constants: SolidityConstant[];
   structs: SolidityStruct[];
   imports: string[];
-  libraries: string[];
+  libraries: LibraryDef[];
 }
 
 export interface ConverterOutput {
@@ -88,11 +93,22 @@ export interface ConverterOutput {
   constants: SolidityConstant[];
   structs: SolidityStruct[];
   imports: string[];
-  libraries: string[];
+  libraries: LibraryDef[];
 }
 
 export interface MergedDefinitions {
   libraries: string[];
   enums: string[];
   structs: string[];
+}
+
+export interface ParsedLibrary {
+  functions: FunctionDef[];
+  enums: SolidityEnum[];
+  structs: SolidityStruct[];
+  imports: string[];
+  constants: SolidityConstant[];
+  libraries: LibraryDef[];
+  path: string;
+  name: string;
 }

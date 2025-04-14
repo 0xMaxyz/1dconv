@@ -1,4 +1,6 @@
+import { getAddress } from "viem";
 import type { FunctionDef, SolidityEnum, TestInputs } from "./types";
+import { getRandomValues } from "crypto";
 
 /**
  * Generates test inputs for a given function definition.
@@ -64,24 +66,29 @@ function generateValuePair(
     }
   }
 
-  // Handle 'bytes' or 'bytes memory' type
-  if (cleanType === "bytes" || cleanType.startsWith("bytes")) {
-    return {
-      solValue:
-        '"0x1de17a000000001234567890abcdef0001de17a000000001234567890abcdef0001de17a000000001234567890abcdef"',
-      tsValue:
-        '"0x1de17a000000001234567890abcdef0001de17a000000001234567890abcdef0001de17a000000001234567890abcdef" as Hex',
-    };
+  if (cleanType.startsWith("bytes")) {
+    // handle bytes
+    if (cleanType === "bytes") {
+      const length = Math.floor(Math.random() * 50) + 1;
+      const randomVal = generateRandomBytes(length);
+      return {
+        solValue: `"${randomVal}"`,
+        tsValue: `"${randomVal}" as Hex`,
+      };
+    } else {
+      const byteLength = parseInt(cleanType.replace("bytes", ""));
+      if (byteLength >= 1 && byteLength <= 32) {
+        const randomVal = generateRandomBytes(byteLength);
+        return {
+          solValue: `${randomVal}`,
+          tsValue: `"${randomVal}" as Hex`,
+        };
+      }
+    }
   }
 
   // Handle boolean parameters
-  if (
-    cleanType === "bool" ||
-    paramName.includes("unsafe") ||
-    paramName.includes("isBase") ||
-    paramName.includes("isShares") ||
-    paramName === "overrideAmount"
-  ) {
+  if (cleanType === "bool") {
     return {
       solValue: "true",
       tsValue: "true",
@@ -99,65 +106,29 @@ function generateValuePair(
     };
   }
 
-  // Handle specific parameters based on name
-  if (paramName === "assets" || paramName === "amount") {
+  if (cleanType === "address") {
+    const address = getAddress(generateRandomBytes(20));
     return {
-      solValue: "1000000000000000000", // 1 ETH in wei
-      tsValue: "1000000000000000000n",
+      solValue: `${address}`,
+      tsValue: `"${address}" as Address`,
     };
   }
 
-  if (paramName === "market" || paramName === "data") {
-    return {
-      solValue: '"0x1de17a"',
-      tsValue: '"0x1de17a" as Hex',
-    };
-  }
+  // // Handle specific parameters based on name
+  // if (paramName === "assets" || paramName === "amount") {
+  //   return {
+  //     solValue: "1000000000000000000", // 1 ETH in wei
+  //     tsValue: "1000000000000000000n",
+  //   };
+  // }
 
-  // Handle other existing types
-  switch (cleanType) {
-    case "address":
-      return {
-        solValue: "0x1De17A0000000000000000000000000000000000",
-        tsValue: `"0x1De17A0000000000000000000000000000000000" as Address`,
-      };
-    default:
-      // For unknown types, make an educated guess based on parameter name
-      if (
-        paramName.includes("pool") ||
-        paramName.includes("comet") ||
-        paramName.includes("token") ||
-        paramName.includes("receiver") ||
-        paramName === "morphoB" ||
-        paramName === "dToken" ||
-        paramName === "aToken" ||
-        paramName === "cToken"
-      ) {
-        return {
-          solValue: "0x1De17A0000000000000000000000000000000000",
-          tsValue: `"0x1De17A0000000000000000000000000000000000" as Address`,
-        };
-      }
-
-      if (
-        paramName.includes("Type") ||
-        paramName.includes("Id") ||
-        paramName === "mode" ||
-        paramName === "poolType" ||
-        paramName === "poolId"
-      ) {
-        return {
-          solValue: "1", // A safe integer value
-          tsValue: "1",
-        };
-      }
-
-      console.warn(`Unsupported parameter type: ${type} for ${paramName}`);
-      return {
-        solValue: "0", // Default to 0 for unknown types
-        tsValue: "0n",
-      };
-  }
+  // if (paramName === "market" || paramName === "data") {
+  //   return {
+  //     solValue: '"0x1de17a"',
+  //     tsValue: '"0x1de17a" as Hex',
+  //   };
+  // }
+  throw new Error(`Unsupported type: ${type}`);
 }
 
 interface FunctionInfo {
@@ -170,12 +141,16 @@ interface FunctionInfo {
 }
 
 // Generate test with appropriate expectations
-function generateTest(func: FunctionInfo, expectedOutput: string): string {
+function generateTest(
+  func: FunctionInfo,
+  expectedOutput: string,
+  enums: SolidityEnum[]
+): string {
   // Generate parameters based on their types
   const params = func.params.map((param) => {
     // Normalize the type by removing comments
     const normalizedType = param.type.replace(/\/\/\s*/, "").trim();
-    const { tsValue } = generateValuePair(normalizedType, param.name);
+    const { tsValue } = generateValuePair(normalizedType, param.name, enums);
     return tsValue;
   });
 
@@ -193,8 +168,9 @@ function generateTest(func: FunctionInfo, expectedOutput: string): string {
 }
 
 export function generateTestSuite(
-  functions: FunctionInfo[],
-  expectedOutputs: string[]
+  functions: FunctionDef[],
+  expectedOutputs: string[],
+  enums: SolidityEnum[]
 ): string {
   const imports = `
 import { describe, expect, test } from 'bun:test';
@@ -204,7 +180,7 @@ import type { Address, Hex } from 'viem';
 `;
 
   const tests = functions
-    .map((func, index) => generateTest(func, expectedOutputs[index]!))
+    .map((func, index) => generateTest(func, expectedOutputs[index]!, enums))
     .join("\n");
 
   return `${imports}
@@ -213,4 +189,16 @@ describe('CalldataLib', () => {
 ${tests}
 });
 `;
+}
+
+function generateRandomBytes(length: number): string {
+  const bytes = new Uint8Array(length);
+  getRandomValues(bytes);
+
+  return (
+    "0x" +
+    Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }

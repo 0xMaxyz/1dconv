@@ -307,22 +307,19 @@ function convertLib2Enum(libCode: string): string {
   let result = libCode;
 
   // Replace each library with enum
-  result = result.replace(
-    libraryRegex,
-    (match, libraryName, libraryContent) => {
-      // Extract all constants
-      const constants: string[] = [];
-      let constantMatch;
+  result = result.replace(libraryRegex, (_, libraryName, libraryContent) => {
+    // Extract all constants
+    const constants: string[] = [];
+    let constantMatch;
 
-      while ((constantMatch = constantRegex.exec(libraryContent)) !== null) {
-        const [_, name, value] = constantMatch;
-        constants.push(`  ${name} = ${value}`);
-      }
-
-      // Create enum
-      return `export enum ${libraryName} {\n${constants.join(",\n")}\n}\n\n`;
+    while ((constantMatch = constantRegex.exec(libraryContent)) !== null) {
+      const [_, name, value] = constantMatch;
+      constants.push(`  ${name} = ${value}`);
     }
-  );
+
+    // Create enum
+    return `export enum ${libraryName} {\n${constants.join(",\n")}\n}\n\n`;
+  });
 
   return result;
 }
@@ -355,9 +352,9 @@ export function convertToTS(
     output += "}\n\n";
   });
 
-  // Add libraries as ts enums, remove the first one as it's the main library
-  libraries.slice(1).forEach((lib) => {
-    output += convertLib2Enum(lib);
+  // Add libraries as ts enum
+  libraries.forEach((lib) => {
+    output += convertLib2Enum(lib.code);
   });
 
   // Add struct definitions

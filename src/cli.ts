@@ -2,7 +2,13 @@
 import { converter } from "./converter";
 import path from "path";
 import { handleFiles } from "./fileHandler";
-import { CALLDATA_LIB_URL, INPUT_DIR, OUTPUT_DIR } from "./consts";
+import {
+  CALLDATA_LIB_URL,
+  INPUT_DIR,
+  OUTPUT_DIR,
+  CALLDATA_LIB_PATH,
+} from "./consts";
+import { LibCache } from "./libCache";
 async function main() {
   const args = process.argv.slice(2);
   console.log(
@@ -81,7 +87,9 @@ async function main() {
 
     // Then process them
     await converter({
-      calldataLibPath: path.resolve(`${INPUT_DIR}/CalldataLib.sol`),
+      calldataLibPath: path.resolve(
+        path.join(INPUT_DIR, path.basename(CALLDATA_LIB_PATH))
+      ),
       outputDir: resolvedOutputDir,
       runTests,
       testCount,
@@ -90,6 +98,8 @@ async function main() {
   } catch (error) {
     console.error("Error:", error);
     process.exit(1);
+  } finally {
+    LibCache.getInstance().clearCache();
   }
 }
 

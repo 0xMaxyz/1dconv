@@ -5,8 +5,9 @@ export const BASE_REPO_URL =
 export const CALLDATA_LIB_PATH = "test/light/utils/CalldataLib.sol";
 export const CALLDATA_LIB_URL = `${BASE_REPO_URL}${CALLDATA_LIB_PATH}`;
 
-export const INPUT_DIR = "./data/input";
-export const OUTPUT_DIR = "./data/output";
+export const DATA_DIR = "./data";
+export const INPUT_DIR = path.join(DATA_DIR, "input");
+export const OUTPUT_DIR = path.join(DATA_DIR, "output");
 export const HARDCODED_FUNCTIONS = [
   "generateAmountBitmap",
   "setOverrideAmount",

@@ -1,8 +1,10 @@
 import * as fs from "fs";
 import * as path from "path";
 import axios from "axios";
-import { parseSolidity } from "./parser";
+import { parseImports as pI } from "./parser";
 import { BASE_REPO_URL, INPUT_DIR } from "./consts";
+import { LibCache } from "./libCache";
+import type { ParsedLibrary } from "./types";
 
 export interface FileHandlerConfig {
   mainFile: string;
@@ -38,29 +40,23 @@ async function processImports(
   filePath: string,
   baseRepoUrl: string,
   inputDir: string
-): Promise<string[]> {
+): Promise<void> {
   const fileContent = fs.readFileSync(filePath, "utf8");
-  const parsed = parseSolidity(fileContent);
-  const downloadedFiles: string[] = [];
+  const parsedImports = pI(fileContent);
 
-  for (const importPath of parsed.imports) {
+  const libName = path.basename(filePath);
+
+  // Process and download imports
+  for (const importPath of parsedImports) {
     const importName = path.basename(importPath);
     const gitUrl = convertImportToGitUrl(importPath, baseRepoUrl);
     const localPath = path.join(inputDir, importName);
 
     await downloadFile(gitUrl, localPath);
-    downloadedFiles.push(localPath);
 
     // Recursively process imports in the downloaded file
-    const nestedImports = await processImports(
-      localPath,
-      baseRepoUrl,
-      inputDir
-    );
-    downloadedFiles.push(...nestedImports);
+    await processImports(localPath, baseRepoUrl, inputDir);
   }
-
-  return downloadedFiles;
 }
 
 export async function handleFiles(config: FileHandlerConfig): Promise<void> {
@@ -94,8 +90,14 @@ async function modifyImportsAndComments(inputDir: string) {
 
         // Convert import statements to relative paths
         content = content.replace(
-          /import\s+["']([^"']+\/)?([^\/"']+)["'];/g,
-          'import "./$2";'
+          /import\s+(?:{[^}]+}\s+from\s+)?["']([^"']+\/)?([^\/"']+)["'];/g,
+          (match, _, fileName) => {
+            const ifNamed = match.match(/import\s+({[^}]+})\s+from\s+/);
+            if (ifNamed) {
+              return `import ${ifNamed[1]} from "./${fileName}";`;
+            }
+            return `import "./${fileName}";`;
+          }
         );
 
         // Remove block comments

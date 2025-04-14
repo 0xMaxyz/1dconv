@@ -8,10 +8,13 @@ import type {
   StructField,
   FunctionDef,
   Parameter,
+  ParsedLibrary,
+  LibraryDef,
 } from "./types";
 import * as path from "path";
 import { convertToTS } from "./conv";
 import { COMBINED_LIB_FILE, INPUT_DIR, LIB_NAME } from "./consts";
+import { LibCache } from "./libCache";
 
 export function parseEnums(content: string) {
   const enumRegex = /enum\s+(\w+)\s*{([^}]*)}/g;
@@ -145,20 +148,21 @@ export function parseFunctions(solidityCode: string): FunctionDef[] {
   return functions;
 }
 
-function parseLibraries(content: string): string[] {
+function parseLibraries(content: string): LibraryDef[] {
   const libraryRegex = /library\s+(\w+)\s*{([^}]*)}/g;
-  const libraries: string[] = [];
+  const libraries: LibraryDef[] = [];
   let match;
   while ((match = libraryRegex.exec(content)) !== null) {
     if (match[1] && match[1] !== LIB_NAME) {
-      libraries.push(match[0]);
+      libraries.push({ name: match[1], code: match[0] });
     }
   }
   return libraries;
 }
 
-function parseImports(content: string): string[] {
-  const importRegex = /import\s+["'](.+?)["'];/g;
+export function parseImports(content: string): string[] {
+  // Match both simple imports and named imports
+  const importRegex = /import\s+(?:{[^}]+}\s+from\s+)?["'](.+?)["'];/g;
   const imports: string[] = [];
 
   let match;
@@ -207,7 +211,7 @@ export function parseSolidity(
   };
 }
 
-function combineContent(
+export function combineContent(
   filePath: string,
   processedFiles: Set<string> = new Set(),
   debug: boolean = false
@@ -215,11 +219,13 @@ function combineContent(
   if (processedFiles.has(filePath)) {
     return ""; // Skip if already processed to avoid circular imports
   }
+  const cache = LibCache.getInstance();
   processedFiles.add(filePath);
 
   // Read the current file content
-  let content = fs.readFileSync(filePath, "utf8");
-  const imports = parseImports(content);
+  let content = fs.readFileSync(path.resolve(INPUT_DIR, filePath), "utf8");
+  const baseName = path.basename(filePath);
+  const imports = cache.getParsedLibrary(baseName)?.imports!;
 
   // Process all imports recursively
   if (imports) {
@@ -248,20 +254,39 @@ export async function processImports(
   outputDir: string,
   debug: boolean = false
 ) {
-  // Combine to one file
-  const combinedContent = combineContent(filePath, new Set(), debug);
-  // Convert the combined content to TypeScript
-  const { output, functions, enums, constants, structs, imports, libraries } =
-    convertToTS(combinedContent);
+  const cache = LibCache.getInstance();
+  const libName_ = path.basename(filePath);
+  if (cache.hasLib(libName_)) {
+    return;
+  }
 
-  // Save the combined TypeScript file
-  const outputFileName = path.basename(filePath, ".sol") + ".ts";
-  const outputPath = path.join(outputDir, outputFileName);
-  fs.writeFileSync(outputPath, output);
-  return { functions, enums, constants, structs, imports, libraries };
+  // TODO: move the handling of combining of the file to another function
+  // then process it
+  // const combinedContent = combineContent(filePath, new Set(), debug);
+  // const cleanContent = cleanupPragmas(combinedContent);
+
+  // Parse the content
+  const solPath = path.resolve(INPUT_DIR, filePath);
+  const solContent = fs.readFileSync(solPath, "utf8");
+
+  const parsed = parseSolidity(solContent, debug);
+  const libName = path.basename(filePath);
+  // Create the library object
+  const library: ParsedLibrary = {
+    ...parsed,
+    path: filePath,
+    name: libName,
+  };
+
+  // Cache the result
+  cache.setParsedLibrary(libName, library);
+
+  for (const importPath of parsed.imports) {
+    await processImports(importPath, outputDir, debug);
+  }
 }
 
-function cleanupPragmas(content: string): string {
+export function cleanupPragmas(content: string): string {
   // Find all pragma statements
   const pragmaRegex = /pragma\s+solidity\s+[^;]+;/g;
   const pragmas = content.match(pragmaRegex) || [];
