@@ -80,13 +80,11 @@ contract GenerateCalldata is Script {
     const testInputs = generateTestInputs(func, enums);
     allTestInputs.push(testInputs);
 
-    if (!isHardcoded(func)) {
-      forgeScript += generateTestFunc(
-        func,
-        [...testInputs.solidityValues],
-        index
-      );
-    }
+    forgeScript += generateTestFunc(
+      func,
+      [...testInputs.solidityValues],
+      index
+    );
   });
 
   forgeScript += `

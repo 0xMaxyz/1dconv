@@ -1,13 +1,7 @@
 import * as fs from "fs";
 import path from "path";
 import type { ConverterConfig } from "./types";
-import {
-  processImports,
-  parseFunctions,
-  combineContent,
-  cleanupPragmas,
-  parseSolidity,
-} from "./parser";
+import { processImports, combineContent, cleanupPragmas } from "./parser";
 import { generateForgeScript } from "./generateForgeScript";
 import { validateTestInputs } from "./validateSchema";
 import { generateTestSuite } from "./testInputGenerator";
@@ -15,7 +9,7 @@ import { execSync } from "child_process";
 import { LibCache } from "./libCache";
 import { convertToTS } from "./conv";
 import { removeIfConditions } from "./purifier";
-import { HARDCODED_FUNCTIONS } from "./consts";
+import { HARDCODED_FUNCTIONS, TEST_INPUTS_FILE } from "./consts";
 
 function parseForgeOutput(output: string): { name: string; hex: string }[] {
   const lines = output.split("\n");
@@ -80,7 +74,7 @@ export async function converter(config: ConverterConfig) {
     }
 
     // Save test inputs and Forge script
-    const testInputsPath = path.join(outputDir, "test-inputs.json");
+    const testInputsPath = path.join(outputDir, TEST_INPUTS_FILE);
     const forgeScriptPath = path.join(outputDir, "GenerateCalldata.s.sol");
 
     fs.writeFileSync(testInputsPath, JSON.stringify(inputs, null, 2));
@@ -122,7 +116,7 @@ export async function converter(config: ConverterConfig) {
     const requiredFunctions = functions.filter(
       (f) => !HARDCODED_FUNCTIONS.includes(f.name)
     );
-    let testContent = generateTestSuite(
+    let testContent = await generateTestSuite(
       requiredFunctions,
       expectedOutputs,
       enums

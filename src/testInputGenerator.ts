@@ -1,8 +1,8 @@
-import { getAddress } from "viem";
+import { getAddress, isAddress } from "viem";
 import type { FunctionDef, SolidityEnum, TestInputs } from "./types";
 import { getRandomValues } from "crypto";
 import path from "path";
-import { CALLDATA_LIB_PATH } from "./consts";
+import { CALLDATA_LIB_PATH, OUTPUT_DIR, TEST_INPUTS_FILE } from "./consts";
 
 /**
  * Generates test inputs for a given function definition.
@@ -71,10 +71,11 @@ function generateValuePair(
   if (cleanType.startsWith("bytes")) {
     // handle bytes
     if (cleanType === "bytes") {
-      const length = Math.floor(Math.random() * 50) + 33;
+      let length = Math.floor(Math.random() * 50) + 33;
+      if (length % 2 == 0) length++;
       const randomVal = generateRandomBytes(length);
       return {
-        solValue: `"${randomVal}"`,
+        solValue: `hex"${randomVal.slice(2)}"`,
         tsValue: `"${randomVal}" as Hex`,
       };
     } else {
@@ -109,7 +110,7 @@ function generateValuePair(
   }
 
   if (cleanType === "address") {
-    const address = getAddress(generateRandomBytes(20));
+    const address = generateRandomAddress();
     return {
       solValue: `${address}`,
       tsValue: `"${address}" as Address`,
@@ -135,15 +136,9 @@ function generateTest(
     name: string;
     hex: string;
   }[],
-  enums: SolidityEnum[]
+  enums: SolidityEnum[],
+  params: string[]
 ): string {
-  // Generate parameters based on their types
-  const params = func.params.map((param) => {
-    // Normalize the type by removing comments
-    const normalizedType = param.type.replace(/\/\/\s*/, "").trim();
-    const { tsValue } = generateValuePair(normalizedType, param.name, enums);
-    return tsValue;
-  });
   const eo = expectedOutputs.find((o) => o.name === func.name)?.hex;
 
   return `
@@ -159,14 +154,14 @@ function generateTest(
   });`;
 }
 
-export function generateTestSuite(
+export async function generateTestSuite(
   functions: FunctionDef[],
   expectedOutputs: {
     name: string;
     hex: string;
   }[],
   enums: SolidityEnum[]
-): string {
+) {
   const imports = `
 import { describe, expect, test } from 'bun:test';
 import * as CalldataLib from "./${path
@@ -174,9 +169,22 @@ import * as CalldataLib from "./${path
     .replace(".sol", "_pure.ts")}";
 import type { Address, Hex } from 'viem';
 `;
+  // read saved test inputs
+  const testInputs = await Bun.file(
+    path.join(OUTPUT_DIR, TEST_INPUTS_FILE)
+  ).text();
+  const testInputsJson: TestInputs[] = JSON.parse(testInputs);
 
   const tests = functions
-    .map((func, index) => generateTest(func, expectedOutputs, enums))
+    .map((func, index) =>
+      generateTest(
+        func,
+        expectedOutputs,
+        enums,
+        testInputsJson.find((t) => t.functionName === func.name)!
+          .typescriptValues
+      )
+    )
     .join("\n");
 
   return `${imports}
@@ -197,4 +205,13 @@ function generateRandomBytes(length: number): string {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("")
   );
+}
+
+function generateRandomAddress() {
+  while (true) {
+    const address = getAddress(generateRandomBytes(20));
+    if (isAddress(address, { strict: false })) {
+      return address;
+    }
+  }
 }
