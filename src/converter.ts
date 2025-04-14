@@ -15,23 +15,23 @@ import { execSync } from "child_process";
 import { LibCache } from "./libCache";
 import { convertToTS } from "./conv";
 import { removeIfConditions } from "./purifier";
+import { HARDCODED_FUNCTIONS } from "./consts";
 
-function parseForgeOutput(output: string): string[] {
+function parseForgeOutput(output: string): { name: string; hex: string }[] {
   const lines = output.split("\n");
-  const hexOutputs: string[] = [];
+  const hexOutputs: { name: string; hex: string }[] = [];
+  const indexOfLogs = lines.findIndex((line) => line === "== Logs ==");
+  const linesAfterLogs = lines.slice(indexOfLogs + 1).filter((line) => line);
 
-  // Look for lines containing log outputs from the Forge script
-  for (const line of lines) {
-    // Check if the line starts with 0x
-    const match = line.match(/0x[0-9a-f]+/i);
-    if (match) {
-      hexOutputs.push(match[0]);
+  linesAfterLogs.forEach((line, index) => {
+    if (index % 2 === 0) {
+      hexOutputs.push({
+        name: line.trim().replace(",", ""),
+        hex: linesAfterLogs[index + 1]!.trim(),
+      });
     }
-  }
+  });
 
-  console.log(
-    `Extracted ${hexOutputs.length} expected outputs from Forge script`
-  );
   return hexOutputs;
 }
 
@@ -88,8 +88,7 @@ export async function converter(config: ConverterConfig) {
 
     // 3. Generate and run Forge script to get expected outputs
     console.log("Generating expected outputs...");
-    let expectedOutputs: string[] = [];
-
+    let expectedOutputs: { name: string; hex: string }[] = [];
     try {
       // Run the Forge script and capture its output
       const forgeOutput = execSync(`forge script ${forgeScriptPath}`, {
@@ -120,23 +119,14 @@ export async function converter(config: ConverterConfig) {
     const testPath = path.join(outputDir, testFileName);
 
     // Generate the test file with proper imports and expected outputs
-    const requiredFunctions = functions.filter((f) =>
-      f.body.includes("abi.encodePacked")
+    const requiredFunctions = functions.filter(
+      (f) => !HARDCODED_FUNCTIONS.includes(f.name)
     );
     let testContent = generateTestSuite(
       requiredFunctions,
       expectedOutputs,
       enums
     );
-    testContent = testContent
-      .replace(
-        /import \* as CalldataLib from "\.\/tsCall";/,
-        `import * as CalldataLib from "./${baseFileName}";`
-      )
-      .replace(
-        /import \{ SweepType \} from '\.\/tsCall';/,
-        `import { SweepType } from './${baseFileName}';`
-      );
 
     fs.writeFileSync(testPath, testContent);
 

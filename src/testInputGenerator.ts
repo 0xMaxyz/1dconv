@@ -1,6 +1,8 @@
 import { getAddress } from "viem";
 import type { FunctionDef, SolidityEnum, TestInputs } from "./types";
 import { getRandomValues } from "crypto";
+import path from "path";
+import { CALLDATA_LIB_PATH } from "./consts";
 
 /**
  * Generates test inputs for a given function definition.
@@ -114,20 +116,6 @@ function generateValuePair(
     };
   }
 
-  // // Handle specific parameters based on name
-  // if (paramName === "assets" || paramName === "amount") {
-  //   return {
-  //     solValue: "1000000000000000000", // 1 ETH in wei
-  //     tsValue: "1000000000000000000n",
-  //   };
-  // }
-
-  // if (paramName === "market" || paramName === "data") {
-  //   return {
-  //     solValue: '"0x1de17a"',
-  //     tsValue: '"0x1de17a" as Hex',
-  //   };
-  // }
   throw new Error(`Unsupported type: ${type}`);
 }
 
@@ -143,7 +131,10 @@ interface FunctionInfo {
 // Generate test with appropriate expectations
 function generateTest(
   func: FunctionInfo,
-  expectedOutput: string,
+  expectedOutputs: {
+    name: string;
+    hex: string;
+  }[],
   enums: SolidityEnum[]
 ): string {
   // Generate parameters based on their types
@@ -153,6 +144,7 @@ function generateTest(
     const { tsValue } = generateValuePair(normalizedType, param.name, enums);
     return tsValue;
   });
+  const eo = expectedOutputs.find((o) => o.name === func.name)?.hex;
 
   return `
   test('${func.name} should match Solidity output', () => {
@@ -163,24 +155,28 @@ function generateTest(
       expect(result).toBeDefined();
       expect(typeof result).toBe('string');
       expect(result.startsWith('0x')).toBe(true);
-      expect(result).toBe("${expectedOutput}");
+      expect(result).toBe("${eo}");
   });`;
 }
 
 export function generateTestSuite(
   functions: FunctionDef[],
-  expectedOutputs: string[],
+  expectedOutputs: {
+    name: string;
+    hex: string;
+  }[],
   enums: SolidityEnum[]
 ): string {
   const imports = `
 import { describe, expect, test } from 'bun:test';
-import * as CalldataLib from "./tsCall";
-import { SweepType } from './tsCall';
+import * as CalldataLib from "./${path
+    .basename(CALLDATA_LIB_PATH)
+    .replace(".sol", "_pure.ts")}";
 import type { Address, Hex } from 'viem';
 `;
 
   const tests = functions
-    .map((func, index) => generateTest(func, expectedOutputs[index]!, enums))
+    .map((func, index) => generateTest(func, expectedOutputs, enums))
     .join("\n");
 
   return `${imports}

@@ -69,7 +69,6 @@ contract GenerateCalldata is Script {
     function setUp() public {}
 
     function run() public pure {
-        // Test each function with generated inputs
 `;
 
   functions.forEach((func, index) => {
@@ -115,9 +114,8 @@ function generateTestFunc(
         bytes memory ${func.name}Result = CalldataLib.${func.name}(
             ${modifiedSolidityValues.join(",\n            ")}
         );
-        console.logBytes(${
-          func.name
-        }Result); // ${index} // Add index for parsing
+        console.log("${func.name},");
+        console.logBytes(${func.name}Result);
 `;
 }
 
