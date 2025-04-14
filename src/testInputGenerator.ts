@@ -69,7 +69,7 @@ function generateValuePair(
   if (cleanType.startsWith("bytes")) {
     // handle bytes
     if (cleanType === "bytes") {
-      const length = Math.floor(Math.random() * 50) + 1;
+      const length = Math.floor(Math.random() * 50) + 33;
       const randomVal = generateRandomBytes(length);
       return {
         solValue: `"${randomVal}"`,
