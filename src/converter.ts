@@ -14,6 +14,8 @@ import { generateTestSuite } from "./testInputGenerator";
 import { execSync } from "child_process";
 import { LibCache } from "./libCache";
 import { convertToTS } from "./conv";
+import { removeIfConditions } from "./purifier";
+
 function parseForgeOutput(output: string): string[] {
   const lines = output.split("\n");
   const hexOutputs: string[] = [];
@@ -61,6 +63,9 @@ export async function converter(config: ConverterConfig) {
 
     // write output
     fs.writeFileSync(tsOutputPath, output);
+
+    // create the no conditions versions of the calldatalib (both solidity and ts)
+    await removeIfConditions([calldataLibPath, tsOutputPath]);
 
     // 2. Generate test inputs and Forge script
     console.log("Generating Forge script and test inputs...");
@@ -118,7 +123,11 @@ export async function converter(config: ConverterConfig) {
     const requiredFunctions = functions.filter((f) =>
       f.body.includes("abi.encodePacked")
     );
-    let testContent = generateTestSuite(requiredFunctions, expectedOutputs);
+    let testContent = generateTestSuite(
+      requiredFunctions,
+      expectedOutputs,
+      enums
+    );
     testContent = testContent
       .replace(
         /import \* as CalldataLib from "\.\/tsCall";/,

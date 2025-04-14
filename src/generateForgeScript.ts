@@ -1,6 +1,6 @@
 import { generateTestInputs } from "./testInputGenerator";
 import type { TestInputs, FunctionDef, SolidityEnum } from "./types";
-import { HARDCODED_FUNCTIONS, INPUT_DIR } from "./consts";
+import { CALLDATA_LIB_PATH, HARDCODED_FUNCTIONS, INPUT_DIR } from "./consts";
 import { LibCache } from "./libCache";
 import path from "path";
 
@@ -50,6 +50,10 @@ export function generateForgeScript(
         : `import  "${ipath}";`;
     })
     .join("\n");
+
+  // import pre version
+  const libName = path.basename(CALLDATA_LIB_PATH);
+  imports = imports.replace(libName, libName.replace(".sol", "_pure.sol"));
 
   const allTestInputs: TestInputs[] = [];
 
