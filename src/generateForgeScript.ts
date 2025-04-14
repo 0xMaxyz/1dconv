@@ -98,10 +98,6 @@ function isHardCodedFunction(functionName: string): boolean {
   return HARDCODED_FUNCTIONS.includes(functionName);
 }
 
-function isHardcoded(func: FunctionDef): boolean {
-  return HARDCODED_FUNCTIONS.includes(func.name);
-}
-
 function generateTestFunc(
   func: FunctionDef,
   modifiedSolidityValues: string[],

@@ -8,7 +8,14 @@ export async function removeIfConditions(files: string[]) {
     const name = path.basename(filePath);
     const pureName = name.replace(".", "_pure.");
 
-    if (name.endsWith("sol") || name.endsWith("ts")) {
+    if (name.endsWith("sol")) {
+      const splitText = "function getMorphoCollateral";
+      const tempContent = content.split(splitText);
+      const regex =
+        /if\s*\([^)]*\)\s*({(?:[^{}]*|{(?:[^{}]*|{[^{}]*})*})*}|[^;\n]*;)/g;
+      content = tempContent[0]!.replaceAll(regex, "");
+      content += splitText + tempContent[1]!;
+    } else if (name.endsWith("ts")) {
       const regex =
         /if\s*\([^)]*\)\s*({(?:[^{}]*|{(?:[^{}]*|{[^{}]*})*})*}|[^;\n]*;)/g;
       content = content.replaceAll(regex, "");

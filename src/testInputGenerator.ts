@@ -76,7 +76,7 @@ function generateValuePair(
       const randomVal = generateRandomBytes(length);
       return {
         solValue: `hex"${randomVal.slice(2)}"`,
-        tsValue: `"${randomVal}" as Hex`,
+        tsValue: `Uint8Array.fromHex("${randomVal.slice(2)}")`,
       };
     } else {
       const byteLength = parseInt(cleanType.replace("bytes", ""));
@@ -84,7 +84,7 @@ function generateValuePair(
         const randomVal = generateRandomBytes(byteLength);
         return {
           solValue: `${randomVal}`,
-          tsValue: `"${randomVal}" as Hex`,
+          tsValue: `Uint8Array.fromHex("${randomVal.slice(2)}")`,
         };
       }
     }
@@ -147,9 +147,6 @@ function generateTest(
       const result = CalldataLib.${func.name}(
         ${params.join(",\n        ")}
       );
-      expect(result).toBeDefined();
-      expect(typeof result).toBe('string');
-      expect(result.startsWith('0x')).toBe(true);
       expect(result).toBe("${eo}");
   });`;
 }
