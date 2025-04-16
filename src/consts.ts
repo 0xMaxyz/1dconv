@@ -17,8 +17,9 @@ export const HARDCODED_FUNCTIONS = [
 
 export const LIB_NAME = path.basename(CALLDATA_LIB_PATH, ".sol");
 
-export const COMBINED_LIB_FILE = "lib.sol";
-
 export const TEST_INPUTS_FILE = "test-inputs.json";
 
 export const FUNCTION_REGEX = /(\w+)\((.*)\)/;
+
+export const PACKAGE_DIR = path.resolve("calldatalib-package");
+export const PACKAGE_SRC_DIR = path.join(PACKAGE_DIR, "src");

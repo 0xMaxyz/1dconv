@@ -5,7 +5,9 @@
   "scripts": {
     "start": "bun run src/cli.ts --run-tests",
     "test": "bun test",
-    "build": "bun build --target bun ./src/cli.ts --outdir ./dist"
+    "build": "bun build --target bun ./src/cli.ts --outdir ./dist",
+    "prepare-package": "bun run src/preparePackage.ts",
+    "pack": "bun run start && bun run prepare-package"
   },
   "devDependencies": {
     "@types/bun": "latest",

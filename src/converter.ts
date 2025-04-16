@@ -9,8 +9,9 @@ import { execSync } from "child_process";
 import { LibCache } from "./libCache";
 import { convertToTS } from "./conv";
 import { removeIfConditions } from "./purifier";
-import { HARDCODED_FUNCTIONS, TEST_INPUTS_FILE } from "./consts";
-import { formatAll } from "./utils";
+import { HARDCODED_FUNCTIONS, OUTPUT_DIR, TEST_INPUTS_FILE } from "./consts";
+import { format } from "prettier";
+
 function parseForgeOutput(output: string): { name: string; hex: string }[] {
   const lines = output.split("\n");
   const hexOutputs: { name: string; hex: string }[] = [];
@@ -151,5 +152,31 @@ export async function converter(config: ConverterConfig) {
   } catch (error) {
     console.error("Error:", error);
     throw error;
+  }
+}
+
+export async function tsFormatter(path_: string): Promise<void> {
+  const content = await Bun.file(path_).text();
+  const formatted = await format(content, {
+    parser: "typescript",
+    singleQuote: false,
+    semi: true,
+    printWidth: 120,
+    tabWidth: 2,
+    useTabs: true,
+    trailingComma: "all",
+    bracketSpacing: true,
+  });
+  await Bun.write(path_, formatted);
+}
+
+export async function formatAll(): Promise<void> {
+  const glob = new Bun.Glob("**/*.ts");
+  const tsFiles: string[] = [];
+  for await (const file of glob.scan({ cwd: OUTPUT_DIR })) {
+    tsFiles.push(path.join(OUTPUT_DIR, file));
+  }
+  for (const file of tsFiles) {
+    await tsFormatter(file);
   }
 }

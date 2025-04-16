@@ -1,12 +1,4 @@
-import {
-  concat,
-  type Hex,
-  encodePacked as abiEncodePacked,
-  type Address,
-} from "viem";
-import { format } from "prettier";
-import { OUTPUT_DIR } from "./consts";
-import path from "path";
+import { type Hex, encodePacked as abiEncodePacked, type Address } from "viem";
 
 export const _PRE_PARAM = 1n << 127n;
 export const _SHARES_MASK = 1n << 126n;
@@ -92,30 +84,4 @@ export function newbytes(length: number): Hex {
 
 export function bytes(value: Hex): Hex {
   return value;
-}
-
-export async function tsFormatter(path_: string): Promise<void> {
-  const content = await Bun.file(path_).text();
-  const formatted = await format(content, {
-    parser: "typescript",
-    singleQuote: false,
-    semi: true,
-    printWidth: 120,
-    tabWidth: 2,
-    useTabs: true,
-    trailingComma: "all",
-    bracketSpacing: true,
-  });
-  await Bun.write(path_, formatted);
-}
-
-export async function formatAll(): Promise<void> {
-  const glob = new Bun.Glob("**/*.ts");
-  const tsFiles: string[] = [];
-  for await (const file of glob.scan({ cwd: OUTPUT_DIR })) {
-    tsFiles.push(path.join(OUTPUT_DIR, file));
-  }
-  for (const file of tsFiles) {
-    await tsFormatter(file);
-  }
 }
