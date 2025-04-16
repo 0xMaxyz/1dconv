@@ -1,0 +1,111 @@
+name: Update and Publish Package
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */1 * * *"
+
+jobs:
+  check-for-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.check.outputs.has_changes }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Store current hash
+        id: check
+        run: |
+          REPO_URL="https://github.com/1delta-DAO/contracts-delegation"
+          BRANCH="composer-compact"
+
+          # Clone the repository to check latest commit
+          git clone --branch $BRANCH --depth 1 $REPO_URL temp-repo
+
+          # Store the latest commit hash
+          LATEST_HASH=$(cd temp-repo && git rev-parse HEAD)
+
+          # Load the previous hash if it exists
+          if [ -f last-processed-hash.txt ]; then
+            PREVIOUS_HASH=$(cat last-processed-hash.txt)
+          else
+            PREVIOUS_HASH=""
+          fi
+
+          # Compare hashes
+          if [ "$LATEST_HASH" != "$PREVIOUS_HASH" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo $LATEST_HASH > last-processed-hash.txt
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Clean up
+          rm -rf temp-repo
+
+  update-package:
+    needs: check-for-changes
+    if: ${{ needs.check-for-changes.outputs.has_changes == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Generate library and prepare package
+        run: bun run prepare-package
+
+      - name: Setup Node.js for publishing
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Bump package version
+        id: version
+        run: |
+          cd calldata-lib-package
+          # Get current version
+          CURRENT_VERSION=$(grep '"version"' package.json | sed 's/.*: "\(.*\)".*/\1/')
+
+          # Extract parts
+          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
+          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
+          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+
+          # Bump patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$NEW_PATCH"
+
+          # Update package.json
+          sed -i "s/\"version\": \"$CURRENT_VERSION\"/\"version\": \"$NEW_VERSION\"/" package.json
+
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      #   - name: Publish to npm
+      #     run: |
+      #       cd calldata-lib-package
+      #       npm publish
+      #     env:
+      #       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add last-processed-hash.txt
+          git add calldata-lib-package/package.json
+          git commit -m "Update package to version ${{ steps.version.outputs.new_version }}"
+          git push
