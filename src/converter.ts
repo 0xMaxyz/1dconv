@@ -39,7 +39,7 @@ export async function converter(config: ConverterConfig) {
 
   try {
     // 1. Generate TypeScript library for calldataLib
-    console.log("Generating TypeScript code...");
+    console.log("Generating TypeScript code...\n");
     // Get base file name without extension
     const baseFileName = path.basename(calldataLibPath, ".sol");
     const tsFileName = baseFileName + ".ts";
@@ -62,7 +62,7 @@ export async function converter(config: ConverterConfig) {
     await removeIfConditions([calldataLibPath, tsOutputPath]);
 
     // 2. Generate test inputs and Forge script
-    console.log("Generating Forge script and test inputs...");
+    console.log("Generating Forge script and test inputs...\n");
     const { script, inputs } = generateForgeScript(
       calldataLibPath,
       functions,
@@ -107,7 +107,7 @@ export async function converter(config: ConverterConfig) {
     }
 
     // 4. Generate tests
-    console.log("Generating tests...");
+    console.log("Generating tests...\n");
 
     const testFileName = baseFileName + ".test.ts";
     const testPath = path.join(outputDir, testFileName);
@@ -126,15 +126,22 @@ export async function converter(config: ConverterConfig) {
 
     // 5. Run tests if requested
     if (runTests) {
-      console.log("Running tests...");
+      console.log("Running tests...\n");
       try {
-        execSync(`bun test ${testPath}`, { stdio: "inherit" });
-        console.log("Tests completed successfully");
+        const result = Bun.spawnSync(["bun", "test", testPath], {
+          stdout: "inherit",
+          stderr: "inherit",
+        });
+        if (result.exitCode === 0) {
+          console.log("\n✅ Tests completed successfully");
+        } else {
+          console.error("\n❌ Tests failed:", result.stderr);
+        }
       } catch (error) {
-        console.error("Tests failed:", error);
+        console.error("\n❌ Tests failed:", error);
       }
     } else {
-      console.log("Tests generated. To run them, use:");
+      console.log("Tests generated. To run them, use: \n");
       console.log(`bun test ${testPath}`);
     }
   } catch (error) {

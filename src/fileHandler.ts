@@ -13,14 +13,20 @@ export interface FileHandlerConfig {
   verbose?: boolean;
 }
 
-async function downloadFile(url: string, outputPath: string): Promise<void> {
+async function downloadFile(
+  url: string,
+  outputPath: string,
+  verbose: boolean
+): Promise<void> {
   try {
     const response = await axios.get(url);
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     fs.writeFileSync(outputPath, response.data);
-    console.log(`Downloaded ${url} to ${outputPath}`);
+    if (verbose) {
+      console.log(`✅ ${outputPath}`);
+    }
   } catch (error) {
-    console.error(`Error downloading ${url}:`, error);
+    console.error(`❌ ${url}`);
     throw error;
   }
 }
@@ -64,6 +70,7 @@ export async function handleFiles(config: FileHandlerConfig): Promise<void> {
     mainFile,
     baseRepoUrl = BASE_REPO_URL,
     inputDir = INPUT_DIR,
+    verbose = false,
   } = config;
 
   // Create input directory if it doesn't exist
@@ -72,7 +79,7 @@ export async function handleFiles(config: FileHandlerConfig): Promise<void> {
   // Download the main file
   const mainFileName = path.basename(mainFile);
   const localMainPath = path.join(inputDir, mainFileName);
-  await downloadFile(mainFile, localMainPath);
+  await downloadFile(mainFile, localMainPath, verbose);
 
   // Process imports recursively
   await processImports(localMainPath, baseRepoUrl, inputDir);

@@ -77,21 +77,6 @@ function convertType(
     return `${convertType(baseType, structs)}[]`;
   }
 
-  // Handle mapping types
-  if (solidityType.startsWith("mapping(")) {
-    const [keyType, valueType] = solidityType
-      .slice(8, -1)
-      .split("=>")
-      .map((t) => t.trim());
-    if (!keyType || !valueType) {
-      throw new Error(`Invalid mapping type: ${solidityType}`);
-    }
-    return `Record<${convertType(keyType, structs)}, ${convertType(
-      valueType,
-      structs
-    )}>`;
-  }
-
   // Handle struct types
   const struct = structs.find((s) => s.name === solidityType);
   if (struct) {
