@@ -10,7 +10,7 @@ import { LibCache } from "./libCache";
 import { convertToTS } from "./conv";
 import { removeIfConditions } from "./purifier";
 import { HARDCODED_FUNCTIONS, TEST_INPUTS_FILE } from "./consts";
-
+import { formatAll } from "./utils";
 function parseForgeOutput(output: string): { name: string; hex: string }[] {
   const lines = output.split("\n");
   const hexOutputs: { name: string; hex: string }[] = [];
@@ -133,16 +133,20 @@ export async function converter(config: ConverterConfig) {
           stderr: "inherit",
         });
         if (result.exitCode === 0) {
-          console.log("\n✅ Tests completed successfully");
+          console.log("\n✅ Tests completed successfully\n");
+          // format the test file
+          console.log("Formatting all generated typescript files...\n");
+          await formatAll();
         } else {
-          console.error("\n❌ Tests failed:", result.stderr);
+          console.error("\n❌ Tests failed:", result.stderr, "\n\n");
         }
       } catch (error) {
-        console.error("\n❌ Tests failed:", error);
+        console.error("\n❌ Tests failed:", error, "\n\n");
       }
     } else {
       console.log("Tests generated. To run them, use: \n");
       console.log(`bun test ${testPath}`);
+      console.log("\n");
     }
   } catch (error) {
     console.error("Error:", error);
