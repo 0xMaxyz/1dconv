@@ -71,7 +71,7 @@ function generateValuePair(
   if (cleanType.startsWith("bytes")) {
     // handle bytes
     if (cleanType === "bytes") {
-      let length = Math.floor(Math.random() * 50) + 33;
+      let length = 75; // 75 bytes
       if (length % 2 == 0) length++;
       const randomVal = generateRandomBytes(length);
       return {

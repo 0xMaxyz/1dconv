@@ -1,11 +1,17 @@
 import { parseSolidity } from "./parser";
-import type { SolidityStruct, FunctionDef, ConverterOutput } from "./types";
-import { HARDCODED_FUNCTIONS } from "./consts";
+import type {
+  SolidityStruct,
+  FunctionDef,
+  ConverterOutput,
+  Parameter,
+} from "./types";
+import { FUNCTION_REGEX, HARDCODED_FUNCTIONS } from "./consts";
 // Uint8Array.fromHex
 Uint8Array;
 const TYPE_MAP: Record<string, string> = {
   uint8: "number",
   uint16: "number",
+  uint24: "number",
   uint32: "number",
   uint64: "bigint",
   uint128: "bigint",
@@ -108,55 +114,76 @@ function getFunctionReturnType(
   return func?.returnType || "bytes"; // Default to bytes if function not found
 }
 
-// Add helper to parse ternary expressions
+/**
+ * Parses the type of a ternary expression
+ * @param expression - The ternary expression to parse
+ * @param functions - list of all functions
+ * @param params - list of all params used for the function that is being parsed
+ * @returns The type of the ternary expression
+ */
 function parseTernaryType(
   expression: string,
-  functions: FunctionDef[]
+  functions: FunctionDef[],
+  params: Parameter[]
 ): string {
-  // Case A: Direct type cast with ternary
-  const castMatch = expression.match(/(\w+)\((.*\?.*:.*)\)/);
-  if (castMatch) {
-    const castType = castMatch[1];
-    return castType; // Return the explicit cast type
-  }
-
-  // Case B: Ternary with function calls
+  // split ternary into parts
   const [condition, truePart, falsePart] = expression
     .split(/\?|:/)
     .map((p) => p.trim());
+  if (!truePart || !falsePart) throw new Error("Invalid ternary expression");
+  // check one of the parts only to find the return type, the other part
+  // should return the same type
+  // first check if any of the parts returns a parameter
+  let paramType = "";
+  for (const p of params) {
+    if (truePart === p.name) {
+      paramType = p.type;
+      break;
+    }
+    if (falsePart === p.name) {
+      paramType = p.type;
+      break;
+    }
+  }
+  // return if found
+  if (paramType) return paramType;
 
   // Helper to get type from expression
   const getExprType = (expr: string): string => {
     // Check for new bytes(0)
-    if (expr.match(/new\s+bytes\s*\(\d+\)/)) {
+    if (expr.includes("bytes(0)")) {
       return "bytes";
     }
 
+    // check for casts
+    const castMatch = expr.match(FUNCTION_REGEX);
+    if (
+      castMatch &&
+      (castMatch[0]?.startsWith("uint") || castMatch[0]?.startsWith("address"))
+    ) {
+      return castMatch[1]!;
+    }
+
     // Check for function calls
-    const funcMatch = expr.match(/(\w+)\((.*)\)/);
+    const funcMatch = expr.match(FUNCTION_REGEX);
     if (funcMatch) {
       if (funcMatch[1]?.startsWith("uint")) {
         // for casts
         return funcMatch[1];
       }
-      return getFunctionReturnType(funcMatch[1], functions);
+      return getFunctionReturnType(funcMatch[1]!, functions);
     }
 
     // Check for type casts
-    const typeCastMatch = expr.match(/(\w+)\((.*)\)/);
+    const typeCastMatch = expr.match(FUNCTION_REGEX);
     if (typeCastMatch) {
-      return typeCastMatch[1];
+      return typeCastMatch[1]!;
     }
 
     return "bytes"; // Default fallback
   };
 
-  // Get types from both branches
-  const trueType = getExprType(truePart);
-  const falseType = getExprType(falsePart);
-
-  // Types should match in a ternary, return either
-  return trueType;
+  return getExprType(truePart);
 }
 
 function convertAbiEncodePacked(
@@ -187,32 +214,101 @@ function convertAbiEncodePacked(
 
       const types: string[] = [];
       const valueExpressions: string[] = [];
-
       args.forEach((arg) => {
         arg = arg.trim();
 
         // Skip comments (don't add them to types or values)
         if (arg.startsWith("//")) return;
-
-        // Handle ternary operators
-        if (arg.includes("?")) {
-          const inferredType = parseTernaryType(arg, allFunctions);
-          types.push(inferredType);
-          valueExpressions.push(arg);
+        // Handle function calls
+        const functionCallMatch = arg.match(FUNCTION_REGEX);
+        if (
+          functionCallMatch &&
+          arg.indexOf(functionCallMatch?.[0] || "0") === 0 &&
+          !arg.startsWith("uint") &&
+          !arg.startsWith("bytes") &&
+          !arg.startsWith("address")
+        ) {
+          const [_, funcName] = functionCallMatch;
+          const returnType = getFunctionReturnType(funcName!, allFunctions);
+          types.push(returnType);
+          if (returnType === "bytes") {
+            valueExpressions.push("`0x${" + arg + ".toHex()}`");
+          } else {
+            valueExpressions.push(arg);
+          }
           return;
         }
 
-        // Handle function calls
-        const functionCallMatch = arg.match(/(\w+)\((.*)\)/);
+        // Handle regular type casting
         if (
           functionCallMatch &&
-          !arg.startsWith("uint") && // filter out casts
-          !arg.startsWith("bytes") // filter out casts
+          arg.indexOf(functionCallMatch?.[0] || "0") === 0
         ) {
-          const [_, funcName] = functionCallMatch;
-          const returnType = getFunctionReturnType(funcName, allFunctions);
-          types.push(returnType);
-          valueExpressions.push(arg);
+          const castType = functionCallMatch[1] || "";
+          const castValue = functionCallMatch[2] || "";
+          types.push(castType);
+          valueExpressions.push(`${castType}(${castValue})`);
+          return;
+        }
+
+        // Handle ternary operators
+        if (arg.includes("?")) {
+          const inferredType = parseTernaryType(
+            arg,
+            allFunctions,
+            funcDef.params
+          );
+          types.push(inferredType);
+          // todo: if any side of the ternary is a function call, we need to wrap its return value correctly
+
+          const [condition, truePart, falsePart] = arg
+            .split(/\?|:/)
+            .map((p) => p.trim());
+
+          let modifiedTruePart = truePart;
+          let modifiedFalsePart = falsePart;
+
+          if (!truePart || !falsePart)
+            throw new Error("Invalid ternary expression");
+          // check true part
+          const truePartMatch = truePart.match(FUNCTION_REGEX);
+          if (
+            truePartMatch &&
+            truePartMatch[1] !== "newbytes" &&
+            !truePartMatch[1]!.startsWith("uint") &&
+            !truePartMatch[1]!.startsWith("bytes") &&
+            !truePartMatch[1]!.startsWith("address")
+          ) {
+            const returnType = getFunctionReturnType(
+              truePartMatch[1]!,
+              allFunctions
+            );
+            if (returnType === "bytes") {
+              modifiedTruePart = "`0x${" + truePartMatch[0] + ".toHex()}`";
+            }
+          }
+
+          // check false part
+          const falsePartMatch = falsePart.match(FUNCTION_REGEX);
+          if (
+            falsePartMatch &&
+            falsePartMatch[1] !== "newbytes" &&
+            !falsePartMatch[1]!.startsWith("uint") &&
+            !falsePartMatch[1]!.startsWith("bytes") &&
+            !falsePartMatch[1]!.startsWith("address")
+          ) {
+            const returnType = getFunctionReturnType(
+              falsePartMatch[1]!,
+              allFunctions
+            );
+            if (returnType === "bytes") {
+              modifiedFalsePart = "`0x${" + falsePartMatch[0] + ".toHex()}`";
+            }
+          }
+          //
+          valueExpressions.push(
+            `${condition} ? ${modifiedTruePart} : ${modifiedFalsePart}`
+          );
           return;
         }
 
@@ -224,34 +320,25 @@ function convertAbiEncodePacked(
           return;
         }
 
-        // Handle regular type casting
-        const castMatch = arg.match(/(\w+)\((.*)\)/);
-        if (castMatch) {
-          const castType = castMatch[1] || "";
-          const castValue = castMatch[2] || "";
-          types.push(castType);
-          valueExpressions.push(`${castType}(${castValue})`);
-        } else {
-          // For regular variables
-          const argName = arg.trim();
-          // Find parameter type from function definition
-          const param = funcDef.params.find((p) => p.name === argName);
-          let paramType = param?.type || "bytes";
+        // For regular variables
+        const argName = arg.trim();
+        // Find parameter type from function definition
+        const param = funcDef.params.find((p) => p.name === argName);
+        let paramType = param?.type || "bytes";
 
-          // Clean up type by removing "memory" and other modifiers
-          paramType = paramType
-            .replace(" memory", "")
-            .replace(" calldata", "")
-            .trim();
-          if (!Object.keys(TYPE_MAP).includes(paramType)) {
-            paramType = "bytes";
-          }
-          types.push(paramType);
-          if (paramType.startsWith("bytes")) {
-            valueExpressions.push("`0x${" + arg + ".toHex()}`");
-          } else {
-            valueExpressions.push(arg);
-          }
+        // Clean up type by removing "memory" and other modifiers
+        paramType = paramType
+          .replace(" memory", "")
+          .replace(" calldata", "")
+          .trim();
+        if (!Object.keys(TYPE_MAP).includes(paramType)) {
+          paramType = "bytes";
+        }
+        types.push(paramType);
+        if (paramType.startsWith("bytes")) {
+          valueExpressions.push("`0x${" + arg + ".toHex()}`");
+        } else {
+          valueExpressions.push(arg);
         }
       });
 
@@ -376,32 +463,8 @@ export function convertToTS(
   functions
     .filter((func) => !HARDCODED_FUNCTIONS.includes(func.name))
     .forEach((func) => {
-      // Function signature
-      output += `export function ${func.name}(`;
-      output += func.params
-        .map((param) => `${param.name}: ${convertType(param.type, structs)}`)
-        .join(", ");
-      output += `): ${convertType(func.returnType || "void", structs)} {\n`;
-
-      let body = func.body;
-      if (body.includes("abi.encodePacked")) {
-        // then convert this
-        body = convertAbiEncodePacked(func, functions);
-      }
-      body = body
-        .replaceAll("revert", "throw new Error")
-        .replaceAll("returnnewbytes(0)", "return `0x0` as Hex;\n")
-        .replaceAll("==", "===")
-        .replaceAll("!=", "!==")
-        .replaceAll("bytesmemory", "const ")
-        .replaceAll("return", "return ")
-        .replaceAll(/=\s*(\d+)(?!n\b)/g, "= $1n")
-        .replaceAll("type(uint120).max", "0xffffffffffffffffffffffffffffffn")
-        .replaceAll("address(0)", "zeroAddress")
-        .replaceAll(/\.length\s*===\s*0n/g, ".length === 0");
-
-      output += body;
-      output += "}\n\n";
+      const funcOutput = convertFunction(func, structs, functions);
+      output += funcOutput;
     });
 
   return {
@@ -413,4 +476,39 @@ export function convertToTS(
     imports,
     libraries,
   };
+}
+
+function convertFunction(
+  func: FunctionDef,
+  structs: SolidityStruct[],
+  functions: FunctionDef[]
+): string {
+  let output: string = "";
+  // Function signature
+  output += `export function ${func.name}(`;
+  output += func.params
+    .map((param) => `${param.name}: ${convertType(param.type, structs)}`)
+    .join(", ");
+  output += `): ${convertType(func.returnType || "void", structs)} {\n`;
+
+  let body = func.body;
+  if (body.includes("abi.encodePacked")) {
+    // then convert this
+    body = convertAbiEncodePacked(func, functions);
+  }
+  body = body
+    .replaceAll("revert", "throw new Error")
+    .replaceAll("returnnewbytes(0)", "return `0x0` as Hex;\n")
+    .replaceAll("==", "===")
+    .replaceAll("!=", "!==")
+    .replaceAll("bytesmemory", "const ")
+    .replaceAll("return", "return ")
+    .replaceAll(/=\s*(\d+)(?!n\b)/g, "= $1n")
+    .replaceAll("type(uint120).max", "0xffffffffffffffffffffffffffffffn")
+    .replaceAll("address(0)", "zeroAddress")
+    .replaceAll(/\.length\s*===\s*0n/g, ".length === 0");
+
+  output += body;
+  output += "}\n\n";
+  return output;
 }

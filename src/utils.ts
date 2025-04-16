@@ -74,12 +74,12 @@ export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
 }
 
 export function getMorphoCollateral(market: any): Address {
-  const slice = market.slice(52, 72); // Take 20 bytes starting at position 52
+  const slice = market.slice(20, 40);
   return `0x${Buffer.from(slice).toString("hex")}` as Address;
 }
 
 export function getMorphoLoanAsset(market: any): Address {
-  const slice = market.slice(32, 52); // Take 20 bytes starting at position 32
+  const slice = market.slice(0, 20);
   return `0x${Buffer.from(slice).toString("hex")}` as Address;
 }
 
