@@ -9,6 +9,7 @@ import {
   CALLDATA_LIB_PATH,
 } from "./consts";
 import { LibCache } from "./libCache";
+import { formatAll } from "./utils";
 async function main() {
   const args = process.argv.slice(2);
   console.log(
@@ -95,6 +96,7 @@ async function main() {
       testCount,
       verbose,
     });
+    await formatAll();
   } catch (error) {
     console.error("Error:", error);
     process.exit(1);
