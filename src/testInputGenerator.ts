@@ -19,11 +19,7 @@ export function generateTestInputs(
   func.params.forEach((param) => {
     // First normalize the type by removing comments
     const normalizedType = param.type.replace(/\/\/\s*/, "").trim();
-    const { solValue, tsValue } = generateValuePair(
-      normalizedType,
-      param.name,
-      enums
-    );
+    const { solValue, tsValue } = generateValuePair(normalizedType, enums);
     solidity.push(solValue);
     typescript.push(tsValue);
   });
@@ -38,12 +34,10 @@ export function generateTestInputs(
 /**
  * Generates a pair of values for a given type.
  * @param type - The type to generate values for.
- * @param paramName - The parameter name (used for type inference)
  * @returns The generated values.
  */
 function generateValuePair(
   type: string,
-  paramName: string = "",
   enums: SolidityEnum[]
 ): {
   solValue: string;
@@ -56,7 +50,7 @@ function generateValuePair(
     .replace(" storage", "")
     .trim();
 
-  // Special handling for enum types
+  // handle enums
   if (enums) {
     const isEnum = enums.find((e) => e.name === cleanType);
     if (isEnum) {
@@ -71,7 +65,7 @@ function generateValuePair(
   if (cleanType.startsWith("bytes")) {
     // handle bytes
     if (cleanType === "bytes") {
-      let length = 75; // 75 bytes
+      let length = Math.floor(Math.random() * 35) + 40; // min 40 bytes, required by morpho test
       if (length % 2 == 0) length++;
       const randomVal = generateRandomBytes(length);
       return {
@@ -92,9 +86,10 @@ function generateValuePair(
 
   // Handle boolean parameters
   if (cleanType === "bool") {
+    const randomBool = Math.random() < 0.5;
     return {
-      solValue: "true",
-      tsValue: "true",
+      solValue: randomBool ? "true" : "false",
+      tsValue: randomBool ? "true" : "false",
     };
   }
 
@@ -120,18 +115,8 @@ function generateValuePair(
   throw new Error(`Unsupported type: ${type}`);
 }
 
-interface FunctionInfo {
-  name: string;
-  params: Array<{
-    name: string;
-    type: string;
-  }>;
-  returnType: string;
-}
-
-// Generate test with appropriate expectations
 function generateTest(
-  func: FunctionInfo,
+  func: FunctionDef,
   expectedOutputs: {
     name: string;
     hex: string;
@@ -173,7 +158,7 @@ import type { Address, Hex } from 'viem';
   const testInputsJson: TestInputs[] = JSON.parse(testInputs);
 
   const tests = functions
-    .map((func, index) =>
+    .map((func) =>
       generateTest(
         func,
         expectedOutputs,
