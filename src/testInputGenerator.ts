@@ -144,9 +144,9 @@ function generateTest(
   return `
   test('${func.name} should match Solidity output', () => {
     
-      const result = CalldataLib.${func.name}(
+      const result = "0x" + CalldataLib.${func.name}(
         ${params.join(",\n        ")}
-      );
+      ).toHex();
       expect(result).toBe("${eo}");
   });`;
 }

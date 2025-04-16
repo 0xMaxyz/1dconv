@@ -45,12 +45,13 @@ export function uint256(value: number | bigint): bigint {
   return BigInt(value) & ((1n << 256n) - 1n);
 }
 
-export function encodePacked(types: string[], values: any[]): Hex {
+export function encodePacked(types: string[], values: any[]): Uint8Array {
   if (types.length !== values.length) {
     throw new Error("Types and values arrays must have the same length");
   }
 
-  return abiEncodePacked(types, values);
+  const result = abiEncodePacked(types, values);
+  return Uint8Array.fromHex(result.slice(2));
 }
 
 export function generateAmountBitmap(
