@@ -82,7 +82,7 @@ jobs:
       - name: Bump package version
         id: version
         run: |
-          cd calldata-lib-package
+          cd calldatalib-package
           # Get current version
           CURRENT_VERSION=$(grep '"version"' package.json | sed 's/.*: "\(.*\)".*/\1/')
 
