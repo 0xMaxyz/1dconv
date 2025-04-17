@@ -1,9 +1,9 @@
 name: Update and Publish Package
 
 on:
-  push:
-    branches:
-      - main
+  #   push:
+  #     branches:
+  #       - main
   workflow_dispatch:
   schedule:
     - cron: "0 */1 * * *"
@@ -107,11 +107,20 @@ jobs:
       #     env:
       #       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Create hash file if it doesn't exist
+        run: |
+          REPO_URL="https://github.com/1delta-DAO/contracts-delegation"
+          BRANCH="composer-compact"
+          git clone --branch $BRANCH --depth 1 $REPO_URL temp-repo
+          LATEST_HASH=$(cd temp-repo && git rev-parse HEAD)
+          echo $LATEST_HASH > last-processed-hash.txt
+          rm -rf temp-repo
+
       - name: Commit and push changes
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add last-processed-hash.txt
-          git add calldata-lib-package/package.json
-          git commit -m "Update package to version ${{ steps.version.outputs.new_version }}"
-          git push
+          git add last-processed-hash.txt || true
+          git add calldatalib-package/package.json || true
+          git commit -m "Update package to version ${{ steps.version.outputs.new_version }}" || true
+          git push || true
