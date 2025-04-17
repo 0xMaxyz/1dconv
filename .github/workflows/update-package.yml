@@ -1,6 +1,9 @@
 name: Update and Publish Package
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: "0 */1 * * *"
@@ -60,6 +63,9 @@ jobs:
 
       - name: Setup Foundry
         uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install Foundry dependencies
+        run: forge install
 
       - name: Install dependencies
         run: bun install
