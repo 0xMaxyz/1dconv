@@ -65,7 +65,7 @@ jobs:
         run: bun install
 
       - name: Generate library and prepare package
-        run: bun run prepare-package
+        run: bun run pack
 
       - name: Setup Node.js for publishing
         uses: actions/setup-node@v3
