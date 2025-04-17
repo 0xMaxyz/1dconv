@@ -104,7 +104,7 @@ jobs:
 
       #   - name: Publish to npm
       #     run: |
-      #       cd calldata-lib-package
+      #       cd calldatalib-package
       #       npm publish
       #     env:
       #       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
