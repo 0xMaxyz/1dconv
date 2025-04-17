@@ -45,7 +45,6 @@ jobs:
           # Compare hashes
           if [ "$LATEST_HASH" != "$PREVIOUS_HASH" ]; then
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo $LATEST_HASH > last-processed-hash.txt
           else
             echo "has_changes=false" >> $GITHUB_OUTPUT
           fi
