@@ -1,4 +1,4 @@
-import { getAddress, isAddress } from "viem";
+import { getAddress, isAddress, type Hex } from "viem";
 import type { FunctionDef, SolidityEnum, TestInputs } from "./types";
 import { getRandomValues } from "crypto";
 import path from "path";
@@ -70,7 +70,7 @@ function generateValuePair(
       const randomVal = generateRandomBytes(length);
       return {
         solValue: `hex"${randomVal.slice(2)}"`,
-        tsValue: `Uint8Array.fromHex("${randomVal.slice(2)}")`,
+        tsValue: `"${randomVal}"`,
       };
     } else {
       const byteLength = parseInt(cleanType.replace("bytes", ""));
@@ -78,7 +78,7 @@ function generateValuePair(
         const randomVal = generateRandomBytes(byteLength);
         return {
           solValue: `${randomVal}`,
-          tsValue: `Uint8Array.fromHex("${randomVal.slice(2)}")`,
+          tsValue: `"${randomVal}"`,
         };
       }
     }
@@ -129,9 +129,9 @@ function generateTest(
   return `
   test('${func.name} should match Solidity output', () => {
     
-      const result = "0x" + CalldataLib.${func.name}(
+      const result = CalldataLib.${func.name}(
         ${params.join(",\n        ")}
-      ).toHex();
+      );
       expect(result).toBe("${eo}");
   });`;
 }
@@ -177,16 +177,14 @@ ${tests}
 `;
 }
 
-function generateRandomBytes(length: number): string {
+function generateRandomBytes(length: number): Hex {
   const bytes = new Uint8Array(length);
   getRandomValues(bytes);
 
-  return (
-    "0x" +
+  return ("0x" +
     Array.from(bytes)
       .map((b) => b.toString(16).padStart(2, "0"))
-      .join("")
-  );
+      .join("")) as Hex;
 }
 
 function generateRandomAddress() {

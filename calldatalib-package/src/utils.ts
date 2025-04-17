@@ -40,13 +40,11 @@ export function uint256(value: number | bigint): bigint {
   return BigInt(value) & ((1n << 256n) - 1n);
 }
 
-export function encodePacked(types: string[], values: any[]): Uint8Array {
+export function encodePacked(types: string[], values: any[]): Hex {
   if (types.length !== values.length) {
     throw new Error("Types and values arrays must have the same length");
   }
-
-  const result = abiEncodePacked(types, values);
-  return Uint8Array.fromHex(result.slice(2));
+  return abiEncodePacked(types, values);
 }
 
 export function generateAmountBitmap(
@@ -68,14 +66,14 @@ export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
   return am;
 }
 
-export function getMorphoCollateral(market: any): Address {
-  const slice = market.slice(20, 40);
-  return `0x${Buffer.from(slice).toString("hex")}` as Address;
+export function getMorphoCollateral(market: Hex): Address {
+  const slice = market.slice(42, 82);
+  return `0x${slice}` as Address;
 }
 
-export function getMorphoLoanAsset(market: any): Address {
-  const slice = market.slice(0, 20);
-  return `0x${Buffer.from(slice).toString("hex")}` as Address;
+export function getMorphoLoanAsset(market: Hex): Address {
+  const slice = market.slice(2, 42);
+  return `0x${slice}` as Address;
 }
 
 export function newbytes(length: number): Hex {
