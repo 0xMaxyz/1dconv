@@ -6,8 +6,7 @@ import type {
   Parameter,
 } from "./types";
 import { FUNCTION_REGEX, HARDCODED_FUNCTIONS } from "./consts";
-// Uint8Array.fromHex
-Uint8Array;
+
 const TYPE_MAP: Record<string, string> = {
   uint8: "number",
   uint16: "number",
@@ -24,40 +23,40 @@ const TYPE_MAP: Record<string, string> = {
   int256: "bigint",
   bool: "boolean",
   string: "string",
-  bytes: "Uint8Array",
+  bytes: "Hex",
   address: "Address",
-  bytes1: "Uint8Array",
-  bytes2: "Uint8Array",
-  bytes3: "Uint8Array",
-  bytes4: "Uint8Array",
-  bytes5: "Uint8Array",
-  bytes6: "Uint8Array",
-  bytes7: "Uint8Array",
-  bytes8: "Uint8Array",
-  bytes9: "Uint8Array",
-  bytes10: "Uint8Array",
-  bytes11: "Uint8Array",
-  bytes12: "Uint8Array",
-  bytes13: "Uint8Array",
-  bytes14: "Uint8Array",
-  bytes15: "Uint8Array",
-  bytes16: "Uint8Array",
-  bytes17: "Uint8Array",
-  bytes18: "Uint8Array",
-  bytes19: "Uint8Array",
-  bytes20: "Uint8Array",
-  bytes21: "Uint8Array",
-  bytes22: "Uint8Array",
-  bytes23: "Uint8Array",
-  bytes24: "Uint8Array",
-  bytes25: "Uint8Array",
-  bytes26: "Uint8Array",
-  bytes27: "Uint8Array",
-  bytes28: "Uint8Array",
-  bytes29: "Uint8Array",
-  bytes30: "Uint8Array",
-  bytes31: "Uint8Array",
-  bytes32: "Uint8Array",
+  bytes1: "Hex",
+  bytes2: "Hex",
+  bytes3: "Hex",
+  bytes4: "Hex",
+  bytes5: "Hex",
+  bytes6: "Hex",
+  bytes7: "Hex",
+  bytes8: "Hex",
+  bytes9: "Hex",
+  bytes10: "Hex",
+  bytes11: "Hex",
+  bytes12: "Hex",
+  bytes13: "Hex",
+  bytes14: "Hex",
+  bytes15: "Hex",
+  bytes16: "Hex",
+  bytes17: "Hex",
+  bytes18: "Hex",
+  bytes19: "Hex",
+  bytes20: "Hex",
+  bytes21: "Hex",
+  bytes22: "Hex",
+  bytes23: "Hex",
+  bytes24: "Hex",
+  bytes25: "Hex",
+  bytes26: "Hex",
+  bytes27: "Hex",
+  bytes28: "Hex",
+  bytes29: "Hex",
+  bytes30: "Hex",
+  bytes31: "Hex",
+  bytes32: "Hex",
 };
 
 function convertType(
@@ -216,11 +215,7 @@ function convertAbiEncodePacked(
           const [_, funcName] = functionCallMatch;
           const returnType = getFunctionReturnType(funcName!, allFunctions);
           types.push(returnType);
-          if (returnType === "bytes") {
-            valueExpressions.push("`0x${" + arg + ".toHex()}`");
-          } else {
-            valueExpressions.push(arg);
-          }
+          valueExpressions.push(arg);
           return;
         }
 
@@ -244,56 +239,7 @@ function convertAbiEncodePacked(
             funcDef.params
           );
           types.push(inferredType);
-          // todo: if any side of the ternary is a function call, we need to wrap its return value correctly
-
-          const [condition, truePart, falsePart] = arg
-            .split(/\?|:/)
-            .map((p) => p.trim());
-
-          let modifiedTruePart = truePart;
-          let modifiedFalsePart = falsePart;
-
-          if (!truePart || !falsePart)
-            throw new Error("Invalid ternary expression");
-          // check true part
-          const truePartMatch = truePart.match(FUNCTION_REGEX);
-          if (
-            truePartMatch &&
-            truePartMatch[1] !== "newbytes" &&
-            !truePartMatch[1]!.startsWith("uint") &&
-            !truePartMatch[1]!.startsWith("bytes") &&
-            !truePartMatch[1]!.startsWith("address")
-          ) {
-            const returnType = getFunctionReturnType(
-              truePartMatch[1]!,
-              allFunctions
-            );
-            if (returnType === "bytes") {
-              modifiedTruePart = "`0x${" + truePartMatch[0] + ".toHex()}`";
-            }
-          }
-
-          // check false part
-          const falsePartMatch = falsePart.match(FUNCTION_REGEX);
-          if (
-            falsePartMatch &&
-            falsePartMatch[1] !== "newbytes" &&
-            !falsePartMatch[1]!.startsWith("uint") &&
-            !falsePartMatch[1]!.startsWith("bytes") &&
-            !falsePartMatch[1]!.startsWith("address")
-          ) {
-            const returnType = getFunctionReturnType(
-              falsePartMatch[1]!,
-              allFunctions
-            );
-            if (returnType === "bytes") {
-              modifiedFalsePart = "`0x${" + falsePartMatch[0] + ".toHex()}`";
-            }
-          }
-          //
-          valueExpressions.push(
-            `${condition} ? ${modifiedTruePart} : ${modifiedFalsePart}`
-          );
+          valueExpressions.push(arg);
           return;
         }
 
@@ -320,11 +266,7 @@ function convertAbiEncodePacked(
           paramType = "bytes";
         }
         types.push(paramType);
-        if (paramType.startsWith("bytes")) {
-          valueExpressions.push("`0x${" + arg + ".toHex()}`");
-        } else {
-          valueExpressions.push(arg);
-        }
+        valueExpressions.push(arg);
       });
 
       // Replace abi.encodePacked with our utility
@@ -491,7 +433,8 @@ function convertFunction(
     .replaceAll(/=\s*(\d+)(?!n\b)/g, "= $1n")
     .replaceAll("type(uint120).max", "0xffffffffffffffffffffffffffffffn")
     .replaceAll("address(0)", "zeroAddress")
-    .replaceAll(/\.length\s*===\s*0n/g, ".length === 0");
+    .replaceAll(/\.length\s*===\s*0n/g, ".length === 0")
+    .replaceAll(".length", ".length/2 -1");
 
   output += body;
   output += "}\n\n";
