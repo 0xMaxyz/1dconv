@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "forge install && bun run src/cli.ts --run-tests",
+    "start": "forge install && bun run ./src/cli.ts --run-tests",
     "test": "forge install && bun test",
     "build": "forge install && bun build --target bun ./src/cli.ts --outdir ./dist",
     "prepare-package": "forge install && bun run src/preparePackage.ts",
