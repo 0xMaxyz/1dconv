@@ -45,7 +45,8 @@ function convertImportToGitUrl(
 async function processImports(
   filePath: string,
   baseRepoUrl: string,
-  inputDir: string
+  inputDir: string,
+  verbose: boolean
 ): Promise<void> {
   const fileContent = fs.readFileSync(filePath, "utf8");
   const parsedImports = pI(fileContent);
@@ -58,10 +59,10 @@ async function processImports(
     const gitUrl = convertImportToGitUrl(importPath, baseRepoUrl);
     const localPath = path.join(inputDir, importName);
 
-    await downloadFile(gitUrl, localPath);
+    await downloadFile(gitUrl, localPath, verbose);
 
     // Recursively process imports in the downloaded file
-    await processImports(localPath, baseRepoUrl, inputDir);
+    await processImports(localPath, baseRepoUrl, inputDir, verbose);
   }
 }
 
@@ -82,12 +83,12 @@ export async function handleFiles(config: FileHandlerConfig): Promise<void> {
   await downloadFile(mainFile, localMainPath, verbose);
 
   // Process imports recursively
-  await processImports(localMainPath, baseRepoUrl, inputDir);
+  await processImports(localMainPath, baseRepoUrl, inputDir, verbose);
 
-  await modifyImportsAndComments(inputDir);
+  await modifyImportsAndComments(inputDir, verbose);
 }
 
-async function modifyImportsAndComments(inputDir: string) {
+async function modifyImportsAndComments(inputDir: string, verbose: boolean) {
   const files = fs.readdirSync(inputDir);
   if (files) {
     files.forEach((file) => {
@@ -114,6 +115,9 @@ async function modifyImportsAndComments(inputDir: string) {
 
         // Write the modified content back to the file
         fs.writeFileSync(filePath, content);
+        if (verbose) {
+          console.log(`✅ ${filePath}`);
+        }
       }
     });
   }
