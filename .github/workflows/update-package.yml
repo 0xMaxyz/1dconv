@@ -8,6 +8,9 @@ on:
   schedule:
     - cron: "0 */1 * * *"
 
+permissions:
+  contents: write
+
 jobs:
   check-for-changes:
     runs-on: ubuntu-latest
