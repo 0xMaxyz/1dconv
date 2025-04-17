@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "bun run src/cli.ts --run-tests",
-    "test": "bun test",
-    "build": "bun build --target bun ./src/cli.ts --outdir ./dist",
-    "prepare-package": "bun run src/preparePackage.ts",
-    "pack": "bun run start && bun run prepare-package"
+    "start": "forge install && bun run src/cli.ts --run-tests",
+    "test": "forge install && bun test",
+    "build": "forge install && bun build --target bun ./src/cli.ts --outdir ./dist",
+    "prepare-package": "forge install && bun run src/preparePackage.ts",
+    "pack": "forge install && bun run start && bun run prepare-package"
   },
   "devDependencies": {
     "@types/bun": "latest",
