@@ -86,7 +86,7 @@ export async function converter(config: ConverterConfig) {
     let expectedOutputs: { name: string; hex: string }[] = [];
     try {
       // Run the Forge script and capture its output
-      const forgeOutput = execSync(`forge script ${forgeScriptPath}`, {
+      const forgeOutput = execSync(`forge script --via-ir ${forgeScriptPath}`, {
         encoding: "utf8",
       });
 
