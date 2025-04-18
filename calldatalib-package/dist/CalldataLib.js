@@ -331,6 +331,11 @@ export function gmxStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
         throw new Error("NoflashforWoo");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.GMX_ID), pool, uint16(uint256(cfg))]);
 }
+export function ktxStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
+    if (cfg === DexPayConfig.FLASH)
+        throw new Error("NoflashforWoo");
+    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.KTX_ID), pool, uint16(uint256(cfg))]);
+}
 export function curveStyleSwap(tokenOut, receiver, pool, indexIn, indexOut, selectorId, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("FlashnotyetsupportedforCurve");

@@ -506,6 +506,14 @@ export function gmxStyleSwap(currentData: Hex, tokenOut: Address, receiver: Addr
 	);
 }
 
+export function ktxStyleSwap(currentData: Hex, tokenOut: Address, receiver: Address, pool: Address, cfg: any): Hex {
+	if (cfg === DexPayConfig.FLASH) throw new Error("NoflashforWoo");
+	return encodePacked(
+		["bytes", "address", "address", "uint8", "address", "uint16"],
+		[currentData, tokenOut, receiver, uint8(DexTypeMappings.KTX_ID), pool, uint16(uint256(cfg))],
+	);
+}
+
 export function curveStyleSwap(
 	tokenOut: Address,
 	receiver: Address,

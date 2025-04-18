@@ -126,6 +126,7 @@ export declare function izumiStyleSwap(tokenOut: Address, receiver: Address, for
 export declare function dodoStyleSwap(currentData: Hex, tokenOut: Address, receiver: Address, pool: Address, selector: any, poolId: bigint, cfg: any, flashCalldata: Hex): Hex;
 export declare function wooStyleSwap(currentData: Hex, tokenOut: Address, receiver: Address, pool: Address, cfg: any): Hex;
 export declare function gmxStyleSwap(currentData: Hex, tokenOut: Address, receiver: Address, pool: Address, cfg: any): Hex;
+export declare function ktxStyleSwap(currentData: Hex, tokenOut: Address, receiver: Address, pool: Address, cfg: any): Hex;
 export declare function curveStyleSwap(tokenOut: Address, receiver: Address, pool: Address, indexIn: bigint, indexOut: bigint, selectorId: bigint, cfg: any): Hex;
 export declare function curveNGStyleSwap(tokenOut: Address, receiver: Address, pool: Address, indexIn: bigint, indexOut: bigint, selectorId: bigint, cfg: any): Hex;
 export declare function nextGenDexSettle(singleton: Address, nativeAmount: bigint): Hex;
