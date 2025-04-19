@@ -410,6 +410,16 @@ export function unwrap(target, receiver, amount, sweepType) {
         uint128(amount),
     ]);
 }
+export function encodeBalancerV2FlashLoan(asset, amount, poolId, data) {
+    return encodePacked(["uint8", "uint8", "address", "uint128", "uint16", "bytes"], [
+        uint8(ComposerCommands.FLASH_LOAN),
+        uint8(FlashLoanIds.BALANCER_V2),
+        asset,
+        uint128(amount),
+        uint16(data.length / 2 - 1 + 1),
+        encodeUint8AndBytes(poolId, data),
+    ]);
+}
 export function encodeFlashLoan(asset, amount, pool, poolType, poolId, data) {
     return encodePacked(["bytes", "uint8", "uint8", "address", "address", "uint128", "uint16", "bytes"], [
         encodeApprove(asset, pool),

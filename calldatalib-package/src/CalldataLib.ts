@@ -638,6 +638,20 @@ export function unwrap(target: Address, receiver: Address, amount: bigint, sweep
 	);
 }
 
+export function encodeBalancerV2FlashLoan(asset: Address, amount: bigint, poolId: number, data: Hex): Hex {
+	return encodePacked(
+		["uint8", "uint8", "address", "uint128", "uint16", "bytes"],
+		[
+			uint8(ComposerCommands.FLASH_LOAN),
+			uint8(FlashLoanIds.BALANCER_V2),
+			asset,
+			uint128(amount),
+			uint16(data.length / 2 - 1 + 1),
+			encodeUint8AndBytes(poolId, data),
+		],
+	);
+}
+
 export function encodeFlashLoan(
 	asset: Address,
 	amount: bigint,

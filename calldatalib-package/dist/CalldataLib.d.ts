@@ -136,6 +136,7 @@ export declare function sweep(asset: Address, receiver: Address, amount: bigint,
 export declare function wrap(amount: bigint, wrapTarget: Address): Hex;
 export declare function encodeApprove(asset: Address, target: Address): Hex;
 export declare function unwrap(target: Address, receiver: Address, amount: bigint, sweepType: any): Hex;
+export declare function encodeBalancerV2FlashLoan(asset: Address, amount: bigint, poolId: number, data: Hex): Hex;
 export declare function encodeFlashLoan(asset: Address, amount: bigint, pool: Address, poolType: number, poolId: number, data: Hex): Hex;
 export declare function encodeUint8AndBytes(poolId: number, data: Hex): Hex;
 export declare function encodeMorphoMarket(loanToken: Address, collateralToken: Address, oracle: Address, irm: Address, lltv: bigint): Hex;
