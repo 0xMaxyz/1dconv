@@ -1,6 +1,5 @@
 {
-  "name": "conv",
-  "private": false,
+  "name": "converter",
   "type": "module",
   "scripts": {
     "start": "forge install && bun run ./src/cli.ts --run-tests",
