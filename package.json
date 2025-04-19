@@ -1,6 +1,6 @@
 {
   "name": "conv",
-  "private": true,
+  "private": false,
   "type": "module",
   "scripts": {
     "start": "forge install && bun run ./src/cli.ts --run-tests",
