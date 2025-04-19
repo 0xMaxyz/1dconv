@@ -360,7 +360,7 @@ export function convertToTS(
 
   output += `
   import { type Hex, type Address, zeroAddress } from "viem";
-  import { encodePacked, uint128, uint8, uint112, uint16, uint256, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, setOverrideAmount, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset } from "../../src/utils.ts";
+  import { encodePacked, uint128, uint8, uint112, uint16, uint256, _PRE_PARAM, _SHARES_MASK, _UNSAFE_AMOUNT, generateAmountBitmap, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset } from "../../src/utils.ts";
   `;
 
   // Add enum definitions

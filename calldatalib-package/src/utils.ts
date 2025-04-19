@@ -49,20 +49,12 @@ export function encodePacked(types: string[], values: any[]): Hex {
 
 export function generateAmountBitmap(
   amount: bigint,
-  preParam: boolean,
   useShares: boolean,
   unsafe: boolean
 ): bigint {
   let am = amount;
-  if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | _PRE_PARAM);
   if (useShares) am = uint128((am & ~BigInt(_SHARES_MASK)) | _SHARES_MASK);
   if (unsafe) am = uint128((am & ~BigInt(_UNSAFE_AMOUNT)) | _UNSAFE_AMOUNT);
-  return am;
-}
-
-export function setOverrideAmount(amount: bigint, preParam: boolean): bigint {
-  let am = uint128(amount);
-  if (preParam) am = uint128((am & ~BigInt(_PRE_PARAM)) | shiftLeft(1n, 127));
   return am;
 }
 

@@ -10,7 +10,6 @@ export const INPUT_DIR = path.join(DATA_DIR, "input");
 export const OUTPUT_DIR = path.join(DATA_DIR, "output");
 export const HARDCODED_FUNCTIONS = [
   "generateAmountBitmap",
-  "setOverrideAmount",
   "getMorphoCollateral",
   "getMorphoLoanAsset",
 ];
