@@ -244,7 +244,7 @@ export function attachBranch(data: Hex, hops: bigint, splits: bigint, splitsData
 	return encodePacked(["bytes", "uint8", "uint8", "bytes"], [data, uint8(hops), uint8(splits), splitsData]);
 }
 
-export function uniswapV2StyleSwap(
+export function encodeUniswapV2StyleSwap(
 	tokenOut: Address,
 	receiver: Address,
 	forkId: bigint,
@@ -269,7 +269,7 @@ export function uniswapV2StyleSwap(
 	);
 }
 
-export function uniswapV4StyleSwap(
+export function encodeUniswapV4StyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -299,7 +299,7 @@ export function uniswapV4StyleSwap(
 	);
 }
 
-export function balancerV2StyleSwap(
+export function encodeBalancerV2StyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -322,7 +322,7 @@ export function balancerV2StyleSwap(
 	);
 }
 
-export function lbStyleSwap(
+export function encodeLbStyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -345,7 +345,7 @@ export function lbStyleSwap(
 	);
 }
 
-export function syncSwapStyleSwap(
+export function encodeSyncSwapStyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -359,7 +359,7 @@ export function syncSwapStyleSwap(
 	);
 }
 
-export function uniswapV3StyleSwap(
+export function encodeUniswapV3StyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -386,7 +386,7 @@ export function uniswapV3StyleSwap(
 	);
 }
 
-export function izumiV3StyleSwap(
+export function encodeIzumiStyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -413,7 +413,7 @@ export function izumiV3StyleSwap(
 	);
 }
 
-export function balancerV3StyleSwap(
+export function encodeBalancerV3StyleSwap(
 	currentData: Hex,
 	tokenOut: Address,
 	receiver: Address,
@@ -434,31 +434,6 @@ export function balancerV3StyleSwap(
 			uint8(cfg),
 			uint16(poolUserData.length / 2 - 1),
 			poolUserData,
-		],
-	);
-}
-
-export function encodeIzumiStyleSwap(
-	tokenOut: Address,
-	receiver: Address,
-	forkId: bigint,
-	pool: Address,
-	feeTier: bigint,
-	cfg: any,
-	flashCalldata: Hex,
-): Hex {
-	if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2) throw new Error("Invalidconfigforv2swap");
-	return encodePacked(
-		["address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"],
-		[
-			tokenOut,
-			receiver,
-			uint8(DexTypeMappings.IZI_ID),
-			pool,
-			uint8(forkId),
-			uint16(feeTier),
-			uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-			bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
 		],
 	);
 }

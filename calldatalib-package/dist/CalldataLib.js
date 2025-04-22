@@ -189,7 +189,7 @@ export function attachBranch(data, hops, splits, splitsData) {
         throw new Error("Nosplitsbutsplitdataprovided");
     return encodePacked(["bytes", "uint8", "uint8", "bytes"], [data, uint8(hops), uint8(splits), splitsData]);
 }
-export function uniswapV2StyleSwap(tokenOut, receiver, forkId, pool, feeDenom, cfg, flashCalldata) {
+export function encodeUniswapV2StyleSwap(tokenOut, receiver, forkId, pool, feeDenom, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["address", "address", "uint8", "address", "uint16", "uint8", "uint16", "bytes"], [
@@ -203,7 +203,7 @@ export function uniswapV2StyleSwap(tokenOut, receiver, forkId, pool, feeDenom, c
         bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
     ]);
 }
-export function uniswapV4StyleSwap(currentData, tokenOut, receiver, manager, fee, tickSpacing, hooks, hookData, cfg) {
+export function encodeUniswapV4StyleSwap(currentData, tokenOut, receiver, manager, fee, tickSpacing, hooks, hookData, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "address", "uint24", "uint24", "uint8", "uint16", "bytes"], [
@@ -220,7 +220,7 @@ export function uniswapV4StyleSwap(currentData, tokenOut, receiver, manager, fee
         hookData,
     ]);
 }
-export function balancerV2StyleSwap(currentData, tokenOut, receiver, poolId, balancerVault, cfg) {
+export function encodeBalancerV2StyleSwap(currentData, tokenOut, receiver, poolId, balancerVault, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "bytes32", "address", "uint16"], [
@@ -233,7 +233,7 @@ export function balancerV2StyleSwap(currentData, tokenOut, receiver, poolId, bal
         uint16(uint256(cfg)),
     ]);
 }
-export function lbStyleSwap(currentData, tokenOut, receiver, pool, swapForY, cfg) {
+export function encodeLbStyleSwap(currentData, tokenOut, receiver, pool, swapForY, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16"], [
@@ -246,12 +246,12 @@ export function lbStyleSwap(currentData, tokenOut, receiver, pool, swapForY, cfg
         uint16(uint256(cfg)),
     ]);
 }
-export function syncSwapStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
+export function encodeSyncSwapStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.SYNC_SWAP_ID), pool, uint16(uint256(cfg))]);
 }
-export function uniswapV3StyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
+export function encodeUniswapV3StyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
@@ -266,7 +266,7 @@ export function uniswapV3StyleSwap(currentData, tokenOut, receiver, forkId, pool
         bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
     ]);
 }
-export function izumiV3StyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
+export function encodeIzumiStyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
     return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
@@ -281,7 +281,7 @@ export function izumiV3StyleSwap(currentData, tokenOut, receiver, forkId, pool, 
         bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
     ]);
 }
-export function balancerV3StyleSwap(currentData, tokenOut, receiver, balancerV3Vault, pool, cfg, poolUserData) {
+export function encodeBalancerV3StyleSwap(currentData, tokenOut, receiver, balancerV3Vault, pool, cfg, poolUserData) {
     return encodePacked(["bytes", "address", "address", "uint8", "address", "address", "uint8", "uint16", "bytes"], [
         currentData,
         tokenOut,
@@ -292,20 +292,6 @@ export function balancerV3StyleSwap(currentData, tokenOut, receiver, balancerV3V
         uint8(cfg),
         uint16(poolUserData.length / 2 - 1),
         poolUserData,
-    ]);
-}
-export function encodeIzumiStyleSwap(tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
-    if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
-        throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.IZI_ID),
-        pool,
-        uint8(forkId),
-        uint16(feeTier),
-        uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-        bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
     ]);
 }
 export function encodeDodoStyleSwap(currentData, tokenOut, receiver, pool, selector, poolId, cfg, flashCalldata) {
