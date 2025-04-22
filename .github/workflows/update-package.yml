@@ -1,9 +1,6 @@
 name: Update and Publish Package
 
 on:
-  #   push:
-  #     branches:
-  #       - main
   workflow_dispatch:
   schedule:
     - cron: "0 */1 * * *"
@@ -56,6 +53,9 @@ jobs:
     needs: check-for-changes
     if: ${{ needs.check-for-changes.outputs.has_changes == 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      lib_changed: ${{ steps.check_lib_changes.outputs.lib_changed }}
+      new_version: ${{ steps.version.outputs.new_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -72,8 +72,39 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Check if library already exists
+        run: |
+          mkdir -p .tmp_prev_lib
+          if [ -d "calldatalib-package/dist" ]; then
+            cp -r calldatalib-package/dist .tmp_prev_lib/
+          fi
+
       - name: Generate library and prepare package
         run: bun run pack
+
+      - name: Check for library changes
+        id: check_lib_changes
+        run: |
+          LIB_CHANGED=false
+
+          # If old version doesn't exist, consider it changed
+          if [ ! -d ".tmp_prev_lib/dist" ]; then
+            echo "No previous library version found, considering as changed"
+            LIB_CHANGED=true
+          else
+            # Check if files differ
+            if ! diff -r -q calldatalib-package/dist .tmp_prev_lib > /dev/null 2>&1; then
+              echo "Library content has changed"
+              LIB_CHANGED=true
+            else
+              echo "No changes in library content"
+            fi
+          fi
+
+          echo "lib_changed=${LIB_CHANGED}" >> $GITHUB_OUTPUT
+
+          # Clean up
+          rm -rf .tmp_prev_lib
 
       - name: Setup Node.js for publishing
         uses: actions/setup-node@v3
@@ -83,6 +114,7 @@ jobs:
 
       - name: Bump package version
         id: version
+        if: steps.check_lib_changes.outputs.lib_changed == 'true'
         run: |
           cd calldatalib-package
           # Get current version
@@ -102,12 +134,13 @@ jobs:
 
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
-      #   - name: Publish to npm
-      #     run: |
-      #       cd calldatalib-package
-      #       npm publish
-      #     env:
-      #       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Get current version if not changed
+        id: current_version
+        if: steps.check_lib_changes.outputs.lib_changed != 'true'
+        run: |
+          cd calldatalib-package
+          CURRENT_VERSION=$(grep '"version"' package.json | sed 's/.*: "\(.*\)".*/\1/')
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create hash file if it doesn't exist
         run: |
@@ -122,8 +155,18 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add last-processed-hash.txt || true
-          git add calldatalib-package/package.json || true
-          git add . || true
-          git commit -m "Update package to version ${{ steps.version.outputs.new_version }}" || true
-          git push || true
+
+          # Check if we have changes to commit
+          if [ "$(git status --porcelain | wc -l)" -gt "0" ]; then
+            git add .
+            
+            if [ "${{ steps.check_lib_changes.outputs.lib_changed }}" == "true" ]; then
+              git commit -m "Update package to version ${{ steps.version.outputs.new_version }}"
+            else
+              git commit -m "Update dependencies without changing library (version remains ${{ steps.current_version.outputs.current_version }})"
+            fi
+            
+            git push
+          else
+            echo "No changes to commit"
+          fi
