@@ -130,7 +130,7 @@ export declare function encodeCurveStyleSwap(tokenOut: Address, receiver: Addres
 export declare function encodeCurveNGStyleSwap(tokenOut: Address, receiver: Address, pool: Address, indexIn: bigint, indexOut: bigint, selectorId: bigint, cfg: any): Hex;
 export declare function encodeNextGenDexSettle(singleton: Address, nativeAmount: bigint): Hex;
 export declare function encodeNextGenDexSettleBalancer(singleton: Address, asset: Address, amountHint: bigint): Hex;
-export declare function encodeTransferIn(asset: Address, receiver: Address, amount: bigint): Hex;
+export declare function encodeTransferIn(asset: Address, from: Address, amount: bigint): Hex;
 export declare function encodeSweep(asset: Address, receiver: Address, amount: bigint, sweepType: any): Hex;
 export declare function encodeWrap(amount: bigint, wrapTarget: Address): Hex;
 export declare function encodeApprove(asset: Address, target: Address): Hex;

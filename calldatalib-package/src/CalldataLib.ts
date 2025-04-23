@@ -263,7 +263,7 @@ export function encodeUniswapV2StyleSwap(
 			pool,
 			uint16(feeDenom),
 			uint8(forkId),
-			uint16(flashCalldata.length / 2 - 1),
+			uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
 			bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
 		],
 	);
@@ -581,10 +581,10 @@ export function encodeNextGenDexSettleBalancer(singleton: Address, asset: Addres
 	);
 }
 
-export function encodeTransferIn(asset: Address, receiver: Address, amount: bigint): Hex {
+export function encodeTransferIn(asset: Address, from: Address, amount: bigint): Hex {
 	return encodePacked(
 		["uint8", "uint8", "address", "address", "uint128"],
-		[uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, receiver, uint128(amount)],
+		[uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, from, uint128(amount)],
 	);
 }
 
