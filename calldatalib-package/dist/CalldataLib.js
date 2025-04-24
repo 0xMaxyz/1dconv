@@ -367,8 +367,8 @@ export function encodeNextGenDexSettleBalancer(singleton, asset, amountHint) {
         uint128(amountHint >= 0xffffffffffffffffffffffffffffffn ? 0xffffffffffffffffffffffffffffffn : amountHint),
     ]);
 }
-export function encodeTransferIn(asset, from, amount) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, from, uint128(amount)]);
+export function encodeTransferIn(asset, receiver, amount) {
+    return encodePacked(["uint8", "uint8", "address", "address", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, receiver, uint128(amount)]);
 }
 export function encodeSweep(asset, receiver, amount, sweepType) {
     return encodePacked(["uint8", "uint8", "address", "address", "uint8", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.SWEEP), asset, receiver, sweepType, uint128(amount)]);
