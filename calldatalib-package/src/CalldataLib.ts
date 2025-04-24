@@ -473,8 +473,8 @@ export function encodeWooStyleSwap(
 ): Hex {
 	if (cfg === DexPayConfig.FLASH) throw new Error("NoflashforWoo");
 	return encodePacked(
-		["bytes", "address", "address", "uint8", "address", "uint16"],
-		[currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint16(uint256(cfg))],
+		["bytes", "address", "address", "uint8", "address", "uint8"],
+		[currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint8(uint256(cfg))],
 	);
 }
 

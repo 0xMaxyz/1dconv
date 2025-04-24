@@ -310,7 +310,7 @@ export function encodeDodoStyleSwap(currentData, tokenOut, receiver, pool, selec
 export function encodeWooStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("NoflashforWoo");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint16(uint256(cfg))]);
+    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint8(uint256(cfg))]);
 }
 export function encodeGmxStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
