@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { zeroAddress } from "viem";
-import { encodePacked, uint128, uint8, uint16, uint256, generateAmountBitmap, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset, } from "./utils";
+import { encodePacked, uint128, uint8, uint16, uint256, generateAmountBitmap, newbytes, bytes, getMorphoCollateral, getMorphoLoanAsset } from "./utils";
 export var SweepType;
 (function (SweepType) {
     SweepType[SweepType["VALIDATE"] = 0] = "VALIDATE";
@@ -120,17 +120,10 @@ export var DexForkMappings;
     DexForkMappings[DexForkMappings["UNISWAP_V2"] = 0] = "UNISWAP_V2";
 })(DexForkMappings || (DexForkMappings = {}));
 export function encodePermit2TransferFrom(token, receiver, amount) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.PERMIT2_TRANSFER_FROM), token, receiver, uint128(amount)]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint128'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.PERMIT2_TRANSFER_FROM), token, receiver, uint128(amount)]);
 }
 export function encodeNextGenDexUnlock(singleton, id, d) {
-    return encodePacked(["uint8", "uint8", "address", "uint16", "uint8", "bytes"], [
-        uint8(ComposerCommands.GEN_2025_SINGELTONS),
-        uint8(Gen2025ActionIds.UNLOCK),
-        singleton,
-        uint16(d.length / 2 - 1 + 1),
-        uint8(id),
-        d,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'uint16', 'uint8', 'bytes'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.UNLOCK), singleton, uint16(d.length / 2 - 1 + 1), uint8(id), d]);
 }
 export function encodeBalancerV3FlashLoan(singleton, poolId, asset, receiver, amount, flashData) {
     const take = encodeBalancerV3Take(singleton, asset, receiver, amount);
@@ -138,7 +131,7 @@ export function encodeBalancerV3FlashLoan(singleton, poolId, asset, receiver, am
     return encodeNextGenDexUnlock(singleton, poolId, encodeBalancerV3FlashLoanData(take, flashData, settle));
 }
 export function encodeBalancerV3FlashLoanData(take, flashData, settle) {
-    return encodePacked(["bytes", "bytes", "bytes"], [take, flashData, settle]);
+    return encodePacked(['bytes', 'bytes', 'bytes'], [take, flashData, settle]);
 }
 export function encodeUniswapV4FlashLoan(singleton, poolId, asset, receiver, amount, flashData) {
     const take = encodeUniswapV4Take(singleton, asset, receiver, amount);
@@ -147,568 +140,198 @@ export function encodeUniswapV4FlashLoan(singleton, poolId, asset, receiver, amo
     return encodeNextGenDexUnlock(singleton, poolId, encodeUniswapV4FlashLoanData(take, sync, flashData, settle));
 }
 export function encodeUniswapV4FlashLoanData(take, sync, flashData, settle) {
-    return encodePacked(["bytes", "bytes", "bytes", "bytes"], [take, sync, flashData, settle]);
+    return encodePacked(['bytes', 'bytes', 'bytes', 'bytes'], [take, sync, flashData, settle]);
 }
 export function encodeBalancerV3Take(singleton, asset, receiver, amount) {
-    return encodePacked(["uint8", "uint8", "address", "address", "address", "uint128"], [
-        uint8(ComposerCommands.GEN_2025_SINGELTONS),
-        uint8(Gen2025ActionIds.BAL_V3_TAKE),
-        singleton,
-        asset,
-        receiver,
-        uint128(amount),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'address', 'uint128'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.BAL_V3_TAKE), singleton, asset, receiver, uint128(amount)]);
 }
 export function encodeUniswapV4Sync(singleton, asset) {
     if (asset === zeroAddress)
         return `0x0`;
-    return encodePacked(["uint8", "uint8", "address", "address"], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.UNI_V4_SYNC), singleton, asset]);
+    ;
+    return encodePacked(['uint8', 'uint8', 'address', 'address'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.UNI_V4_SYNC), singleton, asset]);
 }
 export function encodeUniswapV4Take(singleton, asset, receiver, amount) {
-    return encodePacked(["uint8", "uint8", "address", "address", "address", "uint128"], [
-        uint8(ComposerCommands.GEN_2025_SINGELTONS),
-        uint8(Gen2025ActionIds.UNI_V4_TAKE),
-        singleton,
-        asset,
-        receiver,
-        uint128(amount),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'address', 'uint128'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.UNI_V4_TAKE), singleton, asset, receiver, uint128(amount)]);
 }
 export function swapHead(amount, amountOutMin, assetIn) {
-    return encodePacked(["uint8", "uint128", "uint128", "address"], [
-        uint8(ComposerCommands.SWAPS),
-        generateAmountBitmap(uint128(amount), false, false),
-        uint128(amountOutMin),
-        assetIn,
-    ]);
+    return encodePacked(['uint8', 'uint128', 'uint128', 'address'], [uint8(ComposerCommands.SWAPS), generateAmountBitmap(uint128(amount), false, false), uint128(amountOutMin), assetIn]);
 }
 export function attachBranch(data, hops, splits, splitsData) {
     if (hops !== 0n && splits !== 0n)
         throw new Error("Invalidbranching");
     if (splitsData.length / 2 - 1 > 0 && splits === 0n)
         throw new Error("Nosplitsbutsplitdataprovided");
-    return encodePacked(["bytes", "uint8", "uint8", "bytes"], [data, uint8(hops), uint8(splits), splitsData]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'bytes'], [data, uint8(hops), uint8(splits), splitsData]);
 }
 export function encodeUniswapV2StyleSwap(tokenOut, receiver, forkId, pool, feeDenom, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["address", "address", "uint8", "address", "uint16", "uint8", "uint16", "bytes"], [
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.UNISWAP_V2_ID),
-        pool,
-        uint16(feeDenom),
-        uint8(forkId),
-        uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-        bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
-    ]);
+    return encodePacked(['address', 'address', 'uint8', 'address', 'uint16', 'uint8', 'uint16', 'bytes'], [tokenOut, receiver, uint8(DexTypeMappings.UNISWAP_V2_ID), pool, uint16(feeDenom), uint8(forkId), uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)), bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0))]);
 }
 export function encodeUniswapV4StyleSwap(currentData, tokenOut, receiver, manager, fee, tickSpacing, hooks, hookData, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "address", "uint24", "uint24", "uint8", "uint16", "bytes"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.UNISWAP_V4_ID),
-        hooks,
-        manager,
-        fee,
-        tickSpacing,
-        uint8(uint256(cfg)),
-        uint16(hookData.length / 2 - 1),
-        hookData,
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'address', 'uint24', 'uint24', 'uint8', 'uint16', 'bytes'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.UNISWAP_V4_ID), hooks, manager, fee, tickSpacing, uint8(uint256(cfg)), uint16(hookData.length / 2 - 1), hookData]);
 }
 export function encodeBalancerV2StyleSwap(currentData, tokenOut, receiver, poolId, balancerVault, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "bytes32", "address", "uint16"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.BALANCER_V2_ID),
-        poolId,
-        balancerVault,
-        uint16(uint256(cfg)),
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'bytes32', 'address', 'uint16'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.BALANCER_V2_ID), poolId, balancerVault, uint16(uint256(cfg))]);
 }
 export function encodeLbStyleSwap(currentData, tokenOut, receiver, pool, swapForY, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.LB_ID),
-        pool,
-        uint8(swapForY ? 1 : 0),
-        uint16(uint256(cfg)),
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint8', 'uint16'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.LB_ID), pool, uint8(swapForY ? 1 : 0), uint16(uint256(cfg))]);
 }
 export function encodeSyncSwapStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.SYNC_SWAP_ID), pool, uint16(uint256(cfg))]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint16'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.SYNC_SWAP_ID), pool, uint16(uint256(cfg))]);
 }
 export function encodeUniswapV3StyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.UNISWAP_V3_ID),
-        pool,
-        uint8(forkId),
-        uint16(feeTier),
-        uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-        bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint8', 'uint16', 'uint16', 'bytes'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.UNISWAP_V3_ID), pool, uint8(forkId), uint16(feeTier), uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)), bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0))]);
 }
 export function encodeIzumiStyleSwap(currentData, tokenOut, receiver, forkId, pool, feeTier, cfg, flashCalldata) {
     if (uint256(cfg) < 2 && flashCalldata.length / 2 - 1 > 2)
         throw new Error("Invalidconfigforv2swap");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.IZI_ID),
-        pool,
-        uint8(forkId),
-        uint16(feeTier),
-        uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-        bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint8', 'uint16', 'uint16', 'bytes'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.IZI_ID), pool, uint8(forkId), uint16(feeTier), uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)), bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0))]);
 }
 export function encodeBalancerV3StyleSwap(currentData, tokenOut, receiver, balancerV3Vault, pool, cfg, poolUserData) {
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "address", "uint8", "uint16", "bytes"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.BALANCER_V3_ID),
-        pool,
-        balancerV3Vault,
-        uint8(cfg),
-        uint16(poolUserData.length / 2 - 1),
-        poolUserData,
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'address', 'uint8', 'uint16', 'bytes'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.BALANCER_V3_ID), pool, balancerV3Vault, uint8(cfg), uint16(poolUserData.length / 2 - 1), poolUserData]);
 }
 export function encodeDodoStyleSwap(currentData, tokenOut, receiver, pool, selector, poolId, cfg, flashCalldata) {
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8", "uint16", "uint16", "bytes"], [
-        currentData,
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.DODO_ID),
-        pool,
-        uint8(selector),
-        uint16(poolId),
-        uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)),
-        bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0)),
-    ]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint8', 'uint16', 'uint16', 'bytes'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.DODO_ID), pool, uint8(selector), uint16(poolId), uint16(cfg === DexPayConfig.FLASH ? flashCalldata.length / 2 - 1 : uint256(cfg)), bytes(cfg === DexPayConfig.FLASH ? flashCalldata : newbytes(0))]);
 }
 export function encodeWooStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("NoflashforWoo");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint8"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint8(uint256(cfg))]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint8'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.WOO_FI_ID), pool, uint8(uint256(cfg))]);
 }
 export function encodeGmxStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("NoflashforWoo");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.GMX_ID), pool, uint16(uint256(cfg))]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint16'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.GMX_ID), pool, uint16(uint256(cfg))]);
 }
 export function encodeKtxStyleSwap(currentData, tokenOut, receiver, pool, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("NoflashforWoo");
-    return encodePacked(["bytes", "address", "address", "uint8", "address", "uint16"], [currentData, tokenOut, receiver, uint8(DexTypeMappings.KTX_ID), pool, uint16(uint256(cfg))]);
+    return encodePacked(['bytes', 'address', 'address', 'uint8', 'address', 'uint16'], [currentData, tokenOut, receiver, uint8(DexTypeMappings.KTX_ID), pool, uint16(uint256(cfg))]);
 }
 export function encodeCurveStyleSwap(tokenOut, receiver, pool, indexIn, indexOut, selectorId, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("FlashnotyetsupportedforCurve");
-    return encodePacked(["address", "address", "uint8", "address", "uint8", "uint8", "uint8", "uint16"], [
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.CURVE_V1_STANDARD_ID),
-        pool,
-        uint8(indexIn),
-        uint8(indexOut),
-        uint8(selectorId),
-        uint16(uint256(cfg)),
-    ]);
+    return encodePacked(['address', 'address', 'uint8', 'address', 'uint8', 'uint8', 'uint8', 'uint16'], [tokenOut, receiver, uint8(DexTypeMappings.CURVE_V1_STANDARD_ID), pool, uint8(indexIn), uint8(indexOut), uint8(selectorId), uint16(uint256(cfg))]);
 }
 export function encodeCurveNGStyleSwap(tokenOut, receiver, pool, indexIn, indexOut, selectorId, cfg) {
     if (cfg === DexPayConfig.FLASH)
         throw new Error("FlashnotyetsupportedforCurve");
-    return encodePacked(["address", "address", "uint8", "address", "uint8", "uint8", "uint8", "uint16"], [
-        tokenOut,
-        receiver,
-        uint8(DexTypeMappings.CURVE_RECEIVED_ID),
-        pool,
-        uint8(indexIn),
-        uint8(indexOut),
-        uint8(selectorId),
-        uint16(uint256(cfg)),
-    ]);
+    return encodePacked(['address', 'address', 'uint8', 'address', 'uint8', 'uint8', 'uint8', 'uint16'], [tokenOut, receiver, uint8(DexTypeMappings.CURVE_RECEIVED_ID), pool, uint8(indexIn), uint8(indexOut), uint8(selectorId), uint16(uint256(cfg))]);
 }
 export function encodeNextGenDexSettle(singleton, nativeAmount) {
-    return encodePacked(["uint8", "uint8", "address", "uint128"], [
-        uint8(ComposerCommands.GEN_2025_SINGELTONS),
-        uint8(Gen2025ActionIds.UNI_V4_SETTLE),
-        singleton,
-        uint128(nativeAmount),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'uint128'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.UNI_V4_SETTLE), singleton, uint128(nativeAmount)]);
 }
 export function encodeNextGenDexSettleBalancer(singleton, asset, amountHint) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint128"], [
-        uint8(ComposerCommands.GEN_2025_SINGELTONS),
-        uint8(Gen2025ActionIds.BAL_V3_SETTLE),
-        singleton,
-        asset,
-        uint128(amountHint >= 0xffffffffffffffffffffffffffffffn ? 0xffffffffffffffffffffffffffffffn : amountHint),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint128'], [uint8(ComposerCommands.GEN_2025_SINGELTONS), uint8(Gen2025ActionIds.BAL_V3_SETTLE), singleton, asset, uint128(amountHint >= 0xffffffffffffffffffffffffffffffn ? 0xffffffffffffffffffffffffffffffn : amountHint)]);
 }
 export function encodeTransferIn(asset, receiver, amount) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, receiver, uint128(amount)]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint128'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.TRANSFER_FROM), asset, receiver, uint128(amount)]);
 }
 export function encodeSweep(asset, receiver, amount, sweepType) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint8", "uint128"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.SWEEP), asset, receiver, sweepType, uint128(amount)]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint8', 'uint128'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.SWEEP), asset, receiver, sweepType, uint128(amount)]);
 }
 export function encodeWrap(amount, wrapTarget) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint8", "uint128"], [
-        uint8(ComposerCommands.TRANSFERS),
-        uint8(TransferIds.SWEEP),
-        zeroAddress,
-        wrapTarget,
-        uint8(SweepType.AMOUNT),
-        uint128(amount),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint8', 'uint128'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.SWEEP), zeroAddress, wrapTarget, uint8(SweepType.AMOUNT), uint128(amount)]);
 }
 export function encodeApprove(asset, target) {
-    return encodePacked(["uint8", "uint8", "address", "address"], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.APPROVE), asset, target]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.APPROVE), asset, target]);
 }
 export function encodeUnwrap(target, receiver, amount, sweepType) {
-    return encodePacked(["uint8", "uint8", "address", "address", "uint8", "uint128"], [
-        uint8(ComposerCommands.TRANSFERS),
-        uint8(TransferIds.UNWRAP_WNATIVE),
-        target,
-        receiver,
-        sweepType,
-        uint128(amount),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'address', 'uint8', 'uint128'], [uint8(ComposerCommands.TRANSFERS), uint8(TransferIds.UNWRAP_WNATIVE), target, receiver, sweepType, uint128(amount)]);
 }
 export function encodeBalancerV2FlashLoan(asset, amount, poolId, data) {
-    return encodePacked(["uint8", "uint8", "address", "uint128", "uint16", "bytes"], [
-        uint8(ComposerCommands.FLASH_LOAN),
-        uint8(FlashLoanIds.BALANCER_V2),
-        asset,
-        uint128(amount),
-        uint16(data.length / 2 - 1 + 1),
-        encodeUint8AndBytes(poolId, data),
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'uint128', 'uint16', 'bytes'], [uint8(ComposerCommands.FLASH_LOAN), uint8(FlashLoanIds.BALANCER_V2), asset, uint128(amount), uint16(data.length / 2 - 1 + 1), encodeUint8AndBytes(poolId, data)]);
 }
 export function encodeFlashLoan(asset, amount, pool, poolType, poolId, data) {
-    return encodePacked(["bytes", "uint8", "uint8", "address", "address", "uint128", "uint16", "bytes"], [
-        encodeApprove(asset, pool),
-        uint8(ComposerCommands.FLASH_LOAN),
-        poolType,
-        asset,
-        pool,
-        uint128(amount),
-        uint16(data.length / 2 - 1 + 1),
-        encodeUint8AndBytes(poolId, data),
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'address', 'address', 'uint128', 'uint16', 'bytes'], [encodeApprove(asset, pool), uint8(ComposerCommands.FLASH_LOAN), poolType, asset, pool, uint128(amount), uint16(data.length / 2 - 1 + 1), encodeUint8AndBytes(poolId, data)]);
 }
 export function encodeUint8AndBytes(poolId, data) {
-    return encodePacked(["uint8", "bytes"], [uint8(poolId), data]);
+    return encodePacked(['uint8', 'bytes'], [uint8(poolId), data]);
 }
 export function encodeMorphoMarket(loanToken, collateralToken, oracle, irm, lltv) {
-    return encodePacked(["address", "address", "address", "address", "uint128"], [loanToken, collateralToken, oracle, irm, uint128(lltv)]);
+    return encodePacked(['address', 'address', 'address', 'address', 'uint128'], [loanToken, collateralToken, oracle, irm, uint128(lltv)]);
 }
 export function encodeMorphoDepositCollateral(market, assets, receiver, data, morphoB, pId) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "bytes", "uint128", "address", "address", "uint16", "bytes"], [
-        encodeApprove(getMorphoCollateral(market), morphoB),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        uint128(assets),
-        receiver,
-        morphoB,
-        uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0),
-        data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data),
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address', 'uint16', 'bytes'], [encodeApprove(getMorphoCollateral(market), morphoB), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT), uint16(LenderIds.UP_TO_MORPHO), market, uint128(assets), receiver, morphoB, uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0), data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data)]);
 }
 export function encodeMorphoDeposit(market, isShares, assets, receiver, data, morphoB, pId) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "bytes", "uint128", "address", "address", "uint16", "bytes"], [
-        encodeApprove(getMorphoLoanAsset(market), morphoB),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT_LENDING_TOKEN),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        generateAmountBitmap(uint128(assets), isShares, false),
-        receiver,
-        morphoB,
-        uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0),
-        data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data),
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address', 'uint16', 'bytes'], [encodeApprove(getMorphoLoanAsset(market), morphoB), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT_LENDING_TOKEN), uint16(LenderIds.UP_TO_MORPHO), market, generateAmountBitmap(uint128(assets), isShares, false), receiver, morphoB, uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0), data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data)]);
 }
 export function encodeErc4646Deposit(asset, vault, isShares, assets, receiver) {
-    return encodePacked(["bytes", "uint8", "uint8", "address", "address", "uint128", "address"], [
-        encodeApprove(asset, vault),
-        uint8(ComposerCommands.ERC4646),
-        uint8(0),
-        asset,
-        vault,
-        generateAmountBitmap(uint128(assets), isShares, false),
-        receiver,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'address', 'address', 'uint128', 'address'], [encodeApprove(asset, vault), uint8(ComposerCommands.ERC4646), uint8(0), asset, vault, generateAmountBitmap(uint128(assets), isShares, false), receiver]);
 }
 export function encodeErc4646Withdraw(vault, isShares, assets, receiver) {
-    return encodePacked(["uint8", "uint8", "address", "uint128", "address"], [
-        uint8(ComposerCommands.ERC4646),
-        uint8(1),
-        vault,
-        generateAmountBitmap(uint128(assets), isShares, false),
-        receiver,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'address', 'uint128', 'address'], [uint8(ComposerCommands.ERC4646), uint8(1), vault, generateAmountBitmap(uint128(assets), isShares, false), receiver]);
 }
 export function encodeMorphoWithdraw(market, isShares, assets, receiver, morphoB) {
-    return encodePacked(["uint8", "uint8", "uint16", "bytes", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW_LENDING_TOKEN),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        generateAmountBitmap(uint128(assets), isShares, false),
-        receiver,
-        morphoB,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW_LENDING_TOKEN), uint16(LenderIds.UP_TO_MORPHO), market, generateAmountBitmap(uint128(assets), isShares, false), receiver, morphoB]);
 }
 export function encodeMorphoWithdrawCollateral(market, assets, receiver, morphoB) {
-    return encodePacked(["uint8", "uint8", "uint16", "bytes", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        uint128(assets),
-        receiver,
-        morphoB,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW), uint16(LenderIds.UP_TO_MORPHO), market, uint128(assets), receiver, morphoB]);
 }
 export function encodeMorphoBorrow(market, isShares, assets, receiver, morphoB) {
-    return encodePacked(["uint8", "uint8", "uint16", "bytes", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.BORROW),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        generateAmountBitmap(uint128(assets), isShares, false),
-        receiver,
-        morphoB,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.BORROW), uint16(LenderIds.UP_TO_MORPHO), market, generateAmountBitmap(uint128(assets), isShares, false), receiver, morphoB]);
 }
 export function encodeMorphoRepay(market, isShares, unsafe, assets, receiver, data, morphoB, pId) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "bytes", "uint128", "address", "address", "uint16", "bytes"], [
-        encodeApprove(getMorphoLoanAsset(market), morphoB),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.REPAY),
-        uint16(LenderIds.UP_TO_MORPHO),
-        market,
-        generateAmountBitmap(uint128(assets), isShares, unsafe),
-        receiver,
-        morphoB,
-        uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0),
-        data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data),
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'bytes', 'uint128', 'address', 'address', 'uint16', 'bytes'], [encodeApprove(getMorphoLoanAsset(market), morphoB), uint8(ComposerCommands.LENDING), uint8(LenderOps.REPAY), uint16(LenderIds.UP_TO_MORPHO), market, generateAmountBitmap(uint128(assets), isShares, unsafe), receiver, morphoB, uint16(data.length / 2 - 1 > 0 ? data.length / 2 - 1 + 1 : 0), data.length / 2 - 1 === 0 ? newbytes(0) : encodeUint8AndBytes(uint8(pId), data)]);
 }
 export function encodeAaveDeposit(token, amount, receiver, pool) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        encodeApprove(token, pool),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT),
-        uint16(LenderIds.UP_TO_AAVE_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        pool,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [encodeApprove(token, pool), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT), uint16(LenderIds.UP_TO_AAVE_V3 - 1), token, uint128(amount), receiver, pool]);
 }
 export function encodeAaveBorrow(token, amount, receiver, mode, pool) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "uint8", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.BORROW),
-        uint16(LenderIds.UP_TO_AAVE_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        uint8(mode),
-        pool,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'uint8', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.BORROW), uint16(LenderIds.UP_TO_AAVE_V3 - 1), token, uint128(amount), receiver, uint8(mode), pool]);
 }
 export function encodeAaveRepay(token, amount, receiver, mode, dToken, pool) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "uint8", "address", "address"], [
-        encodeApprove(token, pool),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.REPAY),
-        uint16(LenderIds.UP_TO_AAVE_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        uint8(mode),
-        dToken,
-        pool,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'uint8', 'address', 'address'], [encodeApprove(token, pool), uint8(ComposerCommands.LENDING), uint8(LenderOps.REPAY), uint16(LenderIds.UP_TO_AAVE_V3 - 1), token, uint128(amount), receiver, uint8(mode), dToken, pool]);
 }
 export function encodeAaveWithdraw(token, amount, receiver, aToken, pool) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW),
-        uint16(LenderIds.UP_TO_AAVE_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        aToken,
-        pool,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW), uint16(LenderIds.UP_TO_AAVE_V3 - 1), token, uint128(amount), receiver, aToken, pool]);
 }
 export function encodeAaveV2Deposit(token, amount, receiver, pool) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        encodeApprove(token, pool),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT),
-        uint16(LenderIds.UP_TO_AAVE_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        pool,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [encodeApprove(token, pool), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT), uint16(LenderIds.UP_TO_AAVE_V2 - 1), token, uint128(amount), receiver, pool]);
 }
 export function encodeAaveV2Borrow(token, amount, receiver, mode, pool) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "uint8", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.BORROW),
-        uint16(LenderIds.UP_TO_AAVE_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        uint8(mode),
-        pool,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'uint8', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.BORROW), uint16(LenderIds.UP_TO_AAVE_V2 - 1), token, uint128(amount), receiver, uint8(mode), pool]);
 }
 export function encodeAaveV2Repay(token, amount, receiver, mode, dToken, pool) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "uint8", "address", "address"], [
-        encodeApprove(token, pool),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.REPAY),
-        uint16(LenderIds.UP_TO_AAVE_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        uint8(mode),
-        dToken,
-        pool,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'uint8', 'address', 'address'], [encodeApprove(token, pool), uint8(ComposerCommands.LENDING), uint8(LenderOps.REPAY), uint16(LenderIds.UP_TO_AAVE_V2 - 1), token, uint128(amount), receiver, uint8(mode), dToken, pool]);
 }
 export function encodeAaveV2Withdraw(token, amount, receiver, aToken, pool) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW),
-        uint16(LenderIds.UP_TO_AAVE_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        aToken,
-        pool,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW), uint16(LenderIds.UP_TO_AAVE_V2 - 1), token, uint128(amount), receiver, aToken, pool]);
 }
 export function encodeCompoundV3Deposit(token, amount, receiver, comet) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        encodeApprove(token, comet),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT),
-        uint16(LenderIds.UP_TO_COMPOUND_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        comet,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [encodeApprove(token, comet), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT), uint16(LenderIds.UP_TO_COMPOUND_V3 - 1), token, uint128(amount), receiver, comet]);
 }
 export function encodeCompoundV3Borrow(token, amount, receiver, comet) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.BORROW),
-        uint16(LenderIds.UP_TO_COMPOUND_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        comet,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.BORROW), uint16(LenderIds.UP_TO_COMPOUND_V3 - 1), token, uint128(amount), receiver, comet]);
 }
 export function encodeCompoundV3Repay(token, amount, receiver, comet) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        encodeApprove(token, comet),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.REPAY),
-        uint16(LenderIds.UP_TO_COMPOUND_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        comet,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [encodeApprove(token, comet), uint8(ComposerCommands.LENDING), uint8(LenderOps.REPAY), uint16(LenderIds.UP_TO_COMPOUND_V3 - 1), token, uint128(amount), receiver, comet]);
 }
 export function encodeCompoundV3Withdraw(token, amount, receiver, comet, isBase) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "uint8", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW),
-        uint16(LenderIds.UP_TO_COMPOUND_V3 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        isBase ? uint8(1) : uint8(0),
-        comet,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'uint8', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW), uint16(LenderIds.UP_TO_COMPOUND_V3 - 1), token, uint128(amount), receiver, isBase ? uint8(1) : uint8(0), comet]);
 }
 export function encodeCompoundV2Deposit(token, amount, receiver, cToken) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        token === zeroAddress ? newbytes(0) : encodeApprove(token, cToken),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.DEPOSIT),
-        uint16(LenderIds.UP_TO_COMPOUND_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        cToken,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [token === zeroAddress ? newbytes(0) : encodeApprove(token, cToken), uint8(ComposerCommands.LENDING), uint8(LenderOps.DEPOSIT), uint16(LenderIds.UP_TO_COMPOUND_V2 - 1), token, uint128(amount), receiver, cToken]);
 }
 export function encodeCompoundV2Borrow(token, amount, receiver, cToken) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.BORROW),
-        uint16(LenderIds.UP_TO_COMPOUND_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        cToken,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.BORROW), uint16(LenderIds.UP_TO_COMPOUND_V2 - 1), token, uint128(amount), receiver, cToken]);
 }
 export function encodeCompoundV2Repay(token, amount, receiver, cToken) {
-    return encodePacked(["bytes", "uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        token === zeroAddress ? newbytes(0) : encodeApprove(token, cToken),
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.REPAY),
-        uint16(LenderIds.UP_TO_COMPOUND_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        cToken,
-    ]);
+    return encodePacked(['bytes', 'uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [token === zeroAddress ? newbytes(0) : encodeApprove(token, cToken), uint8(ComposerCommands.LENDING), uint8(LenderOps.REPAY), uint16(LenderIds.UP_TO_COMPOUND_V2 - 1), token, uint128(amount), receiver, cToken]);
 }
 export function encodeCompoundV2Withdraw(token, amount, receiver, cToken) {
-    return encodePacked(["uint8", "uint8", "uint16", "address", "uint128", "address", "address"], [
-        uint8(ComposerCommands.LENDING),
-        uint8(LenderOps.WITHDRAW),
-        uint16(LenderIds.UP_TO_COMPOUND_V2 - 1),
-        token,
-        uint128(amount),
-        receiver,
-        cToken,
-    ]);
+    return encodePacked(['uint8', 'uint8', 'uint16', 'address', 'uint128', 'address', 'address'], [uint8(ComposerCommands.LENDING), uint8(LenderOps.WITHDRAW), uint16(LenderIds.UP_TO_COMPOUND_V2 - 1), token, uint128(amount), receiver, cToken]);
 }
