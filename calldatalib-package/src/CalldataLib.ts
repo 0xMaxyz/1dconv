@@ -72,7 +72,7 @@ export enum FlashLoanIds {
 	AAVE_V2 = 3,
 }
 
-export enum ERC4646Ids {
+export enum ERC4626Ids {
 	DEPOSIT = 0,
 	WITHDRAW = 1,
 }
@@ -93,7 +93,7 @@ export enum ComposerCommands {
 	TRANSFERS = 0x80,
 	PERMIT = 0xa0,
 	FLASH_LOAN = 0xc0,
-	ERC4646 = 0xe0,
+	ERC4626 = 0xe0,
 	GEN_2025_SINGELTONS = 0xe1,
 }
 
@@ -119,7 +119,7 @@ export enum DexTypeMappings {
 	LB_ID = 140,
 	DODO_ID = 150,
 	SYNC_SWAP_ID = 160,
-	ERC4646_ID = 253,
+	ERC4626_ID = 253,
 	NATIVE_WRAP_ID = 254,
 }
 
@@ -745,7 +745,7 @@ export function encodeErc4646Deposit(
 		["bytes", "uint8", "uint8", "address", "address", "uint128", "address"],
 		[
 			encodeApprove(asset, vault),
-			uint8(ComposerCommands.ERC4646),
+			uint8(ComposerCommands.ERC4626),
 			uint8(0),
 			asset,
 			vault,
@@ -759,7 +759,7 @@ export function encodeErc4646Withdraw(vault: Address, isShares: boolean, assets:
 	return encodePacked(
 		["uint8", "uint8", "address", "uint128", "address"],
 		[
-			uint8(ComposerCommands.ERC4646),
+			uint8(ComposerCommands.ERC4626),
 			uint8(1),
 			vault,
 			generateAmountBitmap(uint128(assets), isShares, false),

@@ -47,7 +47,7 @@ export declare enum FlashLoanIds {
     AAVE_V3 = 2,
     AAVE_V2 = 3
 }
-export declare enum ERC4646Ids {
+export declare enum ERC4626Ids {
     DEPOSIT = 0,
     WITHDRAW = 1
 }
@@ -66,7 +66,7 @@ export declare enum ComposerCommands {
     TRANSFERS = 128,
     PERMIT = 160,
     FLASH_LOAN = 192,
-    ERC4646 = 224,
+    ERC4626 = 224,
     GEN_2025_SINGELTONS = 225
 }
 export declare enum ForwarderCommands {
@@ -90,7 +90,7 @@ export declare enum DexTypeMappings {
     LB_ID = 140,
     DODO_ID = 150,
     SYNC_SWAP_ID = 160,
-    ERC4646_ID = 253,
+    ERC4626_ID = 253,
     NATIVE_WRAP_ID = 254
 }
 export declare enum DexForkMappings {

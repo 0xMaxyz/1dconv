@@ -57,11 +57,11 @@ export var FlashLoanIds;
     FlashLoanIds[FlashLoanIds["AAVE_V3"] = 2] = "AAVE_V3";
     FlashLoanIds[FlashLoanIds["AAVE_V2"] = 3] = "AAVE_V2";
 })(FlashLoanIds || (FlashLoanIds = {}));
-export var ERC4646Ids;
-(function (ERC4646Ids) {
-    ERC4646Ids[ERC4646Ids["DEPOSIT"] = 0] = "DEPOSIT";
-    ERC4646Ids[ERC4646Ids["WITHDRAW"] = 1] = "WITHDRAW";
-})(ERC4646Ids || (ERC4646Ids = {}));
+export var ERC4626Ids;
+(function (ERC4626Ids) {
+    ERC4626Ids[ERC4626Ids["DEPOSIT"] = 0] = "DEPOSIT";
+    ERC4626Ids[ERC4626Ids["WITHDRAW"] = 1] = "WITHDRAW";
+})(ERC4626Ids || (ERC4626Ids = {}));
 export var Gen2025ActionIds;
 (function (Gen2025ActionIds) {
     Gen2025ActionIds[Gen2025ActionIds["UNLOCK"] = 0] = "UNLOCK";
@@ -79,7 +79,7 @@ export var ComposerCommands;
     ComposerCommands[ComposerCommands["TRANSFERS"] = 128] = "TRANSFERS";
     ComposerCommands[ComposerCommands["PERMIT"] = 160] = "PERMIT";
     ComposerCommands[ComposerCommands["FLASH_LOAN"] = 192] = "FLASH_LOAN";
-    ComposerCommands[ComposerCommands["ERC4646"] = 224] = "ERC4646";
+    ComposerCommands[ComposerCommands["ERC4626"] = 224] = "ERC4626";
     ComposerCommands[ComposerCommands["GEN_2025_SINGELTONS"] = 225] = "GEN_2025_SINGELTONS";
 })(ComposerCommands || (ComposerCommands = {}));
 export var ForwarderCommands;
@@ -105,7 +105,7 @@ export var DexTypeMappings;
     DexTypeMappings[DexTypeMappings["LB_ID"] = 140] = "LB_ID";
     DexTypeMappings[DexTypeMappings["DODO_ID"] = 150] = "DODO_ID";
     DexTypeMappings[DexTypeMappings["SYNC_SWAP_ID"] = 160] = "SYNC_SWAP_ID";
-    DexTypeMappings[DexTypeMappings["ERC4646_ID"] = 253] = "ERC4646_ID";
+    DexTypeMappings[DexTypeMappings["ERC4626_ID"] = 253] = "ERC4626_ID";
     DexTypeMappings[DexTypeMappings["NATIVE_WRAP_ID"] = 254] = "NATIVE_WRAP_ID";
 })(DexTypeMappings || (DexTypeMappings = {}));
 export var DexForkMappings;
@@ -454,7 +454,7 @@ export function encodeMorphoDeposit(market, isShares, assets, receiver, data, mo
 export function encodeErc4646Deposit(asset, vault, isShares, assets, receiver) {
     return encodePacked(["bytes", "uint8", "uint8", "address", "address", "uint128", "address"], [
         encodeApprove(asset, vault),
-        uint8(ComposerCommands.ERC4646),
+        uint8(ComposerCommands.ERC4626),
         uint8(0),
         asset,
         vault,
@@ -464,7 +464,7 @@ export function encodeErc4646Deposit(asset, vault, isShares, assets, receiver) {
 }
 export function encodeErc4646Withdraw(vault, isShares, assets, receiver) {
     return encodePacked(["uint8", "uint8", "address", "uint128", "address"], [
-        uint8(ComposerCommands.ERC4646),
+        uint8(ComposerCommands.ERC4626),
         uint8(1),
         vault,
         generateAmountBitmap(uint128(assets), isShares, false),
