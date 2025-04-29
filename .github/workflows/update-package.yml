@@ -24,7 +24,7 @@ jobs:
         id: check
         run: |
           REPO_URL="https://github.com/1delta-DAO/contracts-delegation"
-          BRANCH="composer-compact"
+          BRANCH="main"
 
           # Clone the repository to check latest commit
           git clone --branch $BRANCH --depth 1 $REPO_URL temp-repo
@@ -145,7 +145,7 @@ jobs:
       - name: Create hash file if it doesn't exist
         run: |
           REPO_URL="https://github.com/1delta-DAO/contracts-delegation"
-          BRANCH="composer-compact"
+          BRANCH="main"
           git clone --branch $BRANCH --depth 1 $REPO_URL temp-repo
           LATEST_HASH=$(cd temp-repo && git rev-parse HEAD)
           echo $LATEST_HASH > last-processed-hash.txt
