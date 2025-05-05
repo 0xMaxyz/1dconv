@@ -69,10 +69,6 @@ export declare enum ComposerCommands {
     ERC4626 = 224,
     GEN_2025_SINGELTONS = 225
 }
-export declare enum ForwarderCommands {
-    EXT_CALL = 64,
-    ASSET_HANDLING = 128
-}
 export declare enum DexTypeMappings {
     UNISWAP_V3_ID = 0,
     UNISWAP_V2_ID = 1,

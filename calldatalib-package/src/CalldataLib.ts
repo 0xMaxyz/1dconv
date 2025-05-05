@@ -97,11 +97,6 @@ export enum ComposerCommands {
 	GEN_2025_SINGELTONS = 0xe1,
 }
 
-export enum ForwarderCommands {
-	EXT_CALL = 0x40,
-	ASSET_HANDLING = 0x80,
-}
-
 export enum DexTypeMappings {
 	UNISWAP_V3_ID = 0,
 	UNISWAP_V2_ID = 1,

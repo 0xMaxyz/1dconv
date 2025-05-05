@@ -82,11 +82,6 @@ export var ComposerCommands;
     ComposerCommands[ComposerCommands["ERC4626"] = 224] = "ERC4626";
     ComposerCommands[ComposerCommands["GEN_2025_SINGELTONS"] = 225] = "GEN_2025_SINGELTONS";
 })(ComposerCommands || (ComposerCommands = {}));
-export var ForwarderCommands;
-(function (ForwarderCommands) {
-    ForwarderCommands[ForwarderCommands["EXT_CALL"] = 64] = "EXT_CALL";
-    ForwarderCommands[ForwarderCommands["ASSET_HANDLING"] = 128] = "ASSET_HANDLING";
-})(ForwarderCommands || (ForwarderCommands = {}));
 export var DexTypeMappings;
 (function (DexTypeMappings) {
     DexTypeMappings[DexTypeMappings["UNISWAP_V3_ID"] = 0] = "UNISWAP_V3_ID";
