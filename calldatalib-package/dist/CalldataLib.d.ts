@@ -60,14 +60,19 @@ export declare enum Gen2025ActionIds {
     BAL_V3_SETTLE = 5
 }
 export declare enum ComposerCommands {
-    SWAPS = 32,
-    EXT_CALL = 64,
-    LENDING = 96,
-    TRANSFERS = 128,
-    PERMIT = 160,
-    FLASH_LOAN = 192,
-    ERC4626 = 224,
-    GEN_2025_SINGELTONS = 225
+    SWAPS = 16,
+    EXT_CALL = 32,
+    LENDING = 48,
+    TRANSFERS = 64,
+    PERMIT = 80,
+    FLASH_LOAN = 96,
+    ERC4626 = 112,
+    GEN_2025_SINGELTONS = 128,
+    BRIDGING = 144
+}
+export declare enum BridgeIds {
+    STARGATE_V2 = 0,
+    ACROSS = 10
 }
 export declare enum DexTypeMappings {
     UNISWAP_V3_ID = 0,
@@ -98,6 +103,13 @@ export declare enum DexForkMappings {
     BALANCER_V3 = 0,
     UNISWAP_V2 = 0
 }
+export declare function encodeExternalCall(target: Address, value: bigint, data: Hex): Hex;
+export declare function encodeStargateV2Bridge(asset: Address, stargatePool: Address, dstEid: number, receiver: Hex, refundReceiver: Address, amount: bigint, slippage: number, fee: bigint, isBusMode: boolean, isNative: boolean, composeMsg: Hex, extraOptions: Hex): Hex;
+export declare function encodeStargateV2BridgePartial(amount: bigint, slippage: number, fee: bigint, isBusMode: boolean, isNative: boolean, composeMsg: Hex, extraOptions: Hex): Hex;
+export declare function encodeStargateV2BridgeSimpleTaxi(asset: Address, stargatePool: Address, dstEid: number, receiver: Hex, refundReceiver: Address, amount: bigint, isNative: boolean, slippage: number, fee: bigint): Hex;
+export declare function encodeStargateV2BridgeSimpleBus(asset: Address, stargatePool: Address, dstEid: number, receiver: Hex, refundReceiver: Address, amount: bigint, isNative: boolean, slippage: number, fee: bigint): Hex;
+export declare function encodeAcrossBridgeToken(spokePool: Address, depositor: Address, sendingAssetId: Address, receivingAssetId: Address, amount: bigint, fixedFee: bigint, feePercentage: number, destinationChainId: number, receiver: Address, message: Hex): Hex;
+export declare function encodeAcrossBridgeNative(spokePool: Address, depositor: Address, sendingAssetId: Address, receivingAssetId: Address, amount: bigint, fixedFee: bigint, feePercentage: number, destinationChainId: number, receiver: Address, message: Hex): Hex;
 export declare function encodePermit2TransferFrom(token: Address, receiver: Address, amount: bigint): Hex;
 export declare function encodeNextGenDexUnlock(singleton: Address, id: bigint, d: Hex): Hex;
 export declare function encodeBalancerV3FlashLoan(singleton: Address, poolId: bigint, asset: Address, receiver: Address, amount: bigint, flashData: Hex): Hex;
